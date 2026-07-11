@@ -1,0 +1,21 @@
+data:
+  load_dir: data/GEFCom2014-L_V2/Load
+
+outputs:
+  figures_dir: artifacts/eda/figures
+  tables_dir: artifacts/eda/tables
+
+analysis:
+  # Aggregate 25 weather stations only for compact visualizations. Station-level
+  # diagnostics are retained separately; no aggregate is written back to raw data.
+  weather_aggregate: mean
+  temperature_bins: 24
+  extreme_quantiles: [0.001, 0.999]
+  selected_lags_hours: [1, 2, 3, 24, 48, 168, 336, 8760]
+
+plot:
+  style: whitegrid
+  context: notebook
+  dpi: 150
+  format: png
+  palette: colorblind
