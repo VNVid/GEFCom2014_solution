@@ -6,3 +6,13 @@
 
 # Python
 __pycache__/
+.venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# Generated local caches (EDA figures/tables are intentionally versioned)
+.cache/
+
+# Other
+backup/
