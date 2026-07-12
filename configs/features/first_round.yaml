@@ -1,0 +1,44 @@
+feature_groups:
+  target_time: {}
+
+  recent_load:
+    mean_windows_days: [7, 28, 365]
+    std_windows_days: [28]
+    difference_windows_days:
+      - [7, 28]
+    trend_windows_days: [28]
+    yoy_windows_days: [28, 365]
+
+  recent_load_profile:
+    mean_windows_weeks: [4, 12]
+    std_windows_weeks: [12]
+    include_last_day: true
+    include_last_hour_of_week: true
+
+  seasonal_load_profile:
+    day_type_window_days: 8
+    day_type_quantiles: [0.10, 0.50, 0.90]
+    include_day_type_count: true
+    hour_of_week_window_days: 15
+    hour_of_week_statistics: [mean, std, count]
+    quantile_method: linear
+
+  seasonal_load_adjustment:
+    recent_window_days: 28
+    seasonal_window_days: 8
+    seasonal_quantile: 0.50
+    quantile_method: linear
+
+  annual_load_anchors:
+    calendar_year_lags: [1]
+    fixed_day_lags: [364]
+
+  temperature_climatology:
+    seasonal_window_days: 15
+    statistics: [mean, min_station, max_station, station_std, temporal_std]
+
+  recent_temperature:
+    mean_windows_days: [1, 7, 28]
+    std_windows_days: [7]
+    anomaly_window_days: 7
+    anomaly_seasonal_window_days: 15
