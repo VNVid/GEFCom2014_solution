@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
 
@@ -18,6 +19,7 @@ def build_annual_load_anchor_features(
     *,
     calendar_year_lags: Iterable[int] = (1,),
     fixed_day_lags: Iterable[int] = (364,),
+    aggregate_statistics: Iterable[str] = (),
 ) -> pd.DataFrame:
     """Build calendar-aligned and weekday-aligned annual load anchors.
 
@@ -39,20 +41,39 @@ def build_annual_load_anchor_features(
 
     year_lags = _positive_unique_lags(calendar_year_lags, "calendar_year_lags")
     day_lags = _positive_unique_lags(fixed_day_lags, "fixed_day_lags")
+    statistics = tuple(str(value) for value in aggregate_statistics)
+    unknown_statistics = sorted(set(statistics) - {"mean", "std"})
+    if unknown_statistics:
+        raise ValueError(f"Unknown annual aggregate statistics {unknown_statistics}")
+    if len(statistics) != len(set(statistics)):
+        raise ValueError("aggregate_statistics must not contain duplicates")
     if not year_lags and not day_lags:
         raise ValueError("annual_load_anchors configuration must produce a feature")
 
     features = pd.DataFrame(index=target.index)
+    anchor_names: list[str] = []
     for years in year_lags:
         references = target["period_start"] - pd.DateOffset(years=years)
-        features[f"load_lag_calendar_{years}y"] = load_values_at_periods(
+        name = f"load_lag_calendar_{years}y"
+        features[name] = load_values_at_periods(
             history, target, references
         )
+        anchor_names.append(name)
     for days in day_lags:
         references = target["period_start"] - pd.Timedelta(days=days)
-        features[f"load_lag_{days}d"] = load_values_at_periods(
+        name = f"load_lag_{days}d"
+        features[name] = load_values_at_periods(
             history, target, references
         )
+        anchor_names.append(name)
+
+    anchors = features.loc[:, anchor_names].to_numpy(dtype=float)
+    for statistic in statistics:
+        if statistic == "mean":
+            values = np.mean(anchors, axis=1)
+        else:
+            values = np.std(anchors, axis=1, ddof=0)
+        features[f"load_annual_anchor_{statistic}"] = values
     return features
 
 

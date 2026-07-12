@@ -82,6 +82,30 @@ def test_recent_load_trend_uses_daily_means() -> None:
     assert features.loc[0, "load_daily_slope_28d"] == pytest.approx(1.0)
 
 
+def test_medium_term_window_can_bridge_recent_and_annual_levels() -> None:
+    origin = pd.Timestamp("2010-04-01")
+    periods = pd.date_range(
+        origin - pd.Timedelta(days=90), origin, freq="h", inclusive="left"
+    )
+    loads = np.where(periods >= origin - pd.Timedelta(days=28), 200.0, 100.0)
+    features = build_recent_load_features(
+        _history(periods, loads),
+        _target(["2010-04-01 00:00"]),
+        origin,
+        mean_windows_days=(28, 90),
+        std_windows_days=(),
+        difference_windows_days=((28, 90),),
+        trend_windows_days=(),
+        yoy_windows_days=(),
+    )
+
+    expected_90d = (28 * 200.0 + 62 * 100.0) / 90
+    assert features.loc[0, "load_mean_90d"] == pytest.approx(expected_90d)
+    assert features.loc[0, "load_mean_28d_minus_90d"] == pytest.approx(
+        200.0 - expected_90d
+    )
+
+
 def test_incomplete_recent_window_produces_nan_instead_of_partial_mean() -> None:
     origin = pd.Timestamp("2010-03-01")
     periods = pd.date_range(

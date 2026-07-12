@@ -26,6 +26,8 @@ def build_temperature_climatology_features(
         "station_std",
         "temporal_std",
     ),
+    quantiles: Iterable[float] = (),
+    degree_thresholds: Iterable[float] = (),
     station_columns: Iterable[str] = WEATHER_COLUMNS,
 ) -> pd.DataFrame:
     """Summarize expected weather from completed prior seasonal cycles.
@@ -37,6 +39,9 @@ def build_temperature_climatology_features(
     its spatial spread. ``temporal_std`` instead measures variation over the
     analogue rows after averaging stations, providing a weather-uncertainty
     signal without observing the target month's realized temperatures.
+    Optional quantiles summarize the historical distribution of station-mean
+    temperature, while degree transforms expose its nonlinear heating/cooling
+    relationship with load.
     """
 
     stations = _station_names(station_columns)
@@ -63,7 +68,29 @@ def build_temperature_climatology_features(
         raise ValueError(
             "temperature climatology statistics must not contain duplicates"
         )
-    if not requested:
+
+    raw_quantiles = tuple(quantiles)
+    levels = np.asarray(raw_quantiles, dtype=float)
+    if levels.ndim != 1 or not np.isfinite(levels).all():
+        raise ValueError("Temperature quantiles must be a finite sequence")
+    if levels.size and (
+        not np.all((levels > 0) & (levels < 1))
+        or not np.all(np.diff(levels) > 0)
+    ):
+        raise ValueError("Temperature quantiles must increase strictly inside (0, 1)")
+    percentiles = np.rint(100 * levels).astype(int)
+    if levels.size and not np.allclose(100 * levels, percentiles):
+        raise ValueError("Temperature quantiles must be whole percentiles")
+    if len(percentiles) != len(set(percentiles)):
+        raise ValueError("Temperature quantiles produce duplicate feature names")
+
+    thresholds = tuple(float(value) for value in degree_thresholds)
+    if not np.isfinite(thresholds).all():
+        raise ValueError("Temperature degree thresholds must be finite")
+    threshold_labels = tuple(_number_label(value) for value in thresholds)
+    if len(threshold_labels) != len(set(threshold_labels)):
+        raise ValueError("Temperature degree thresholds produce duplicate names")
+    if not requested and not raw_quantiles and not thresholds:
         raise ValueError("temperature_climatology configuration must produce a feature")
 
     samples_by_target = previous_seasonal_samples(
@@ -73,32 +100,54 @@ def build_temperature_climatology_features(
         window_days=seasonal_window_days,
         day_match="none",
     )
-    feature_values: dict[str, list[float]] = {name: [] for name in requested}
+    value_names = [*requested, *(f"q{value:02d}" for value in percentiles)]
+    for threshold in threshold_labels:
+        value_names.extend((f"hdd{threshold}", f"cdd{threshold}"))
+    feature_values: dict[str, list[float]] = {name: [] for name in value_names}
     for samples in samples_by_target:
         if samples.size == 0:
-            for name in requested:
+            for name in value_names:
                 feature_values[name].append(np.nan)
             continue
 
         station_climatology = np.mean(samples, axis=0)
+        temporal_means = np.mean(samples, axis=1)
+        expected_mean = float(np.mean(station_climatology))
         values = {
-            "mean": float(np.mean(station_climatology)),
+            "mean": expected_mean,
             "min_station": float(np.min(station_climatology)),
             "max_station": float(np.max(station_climatology)),
             "station_std": float(np.std(station_climatology, ddof=0)),
-            "temporal_std": float(np.std(np.mean(samples, axis=1), ddof=0)),
+            "temporal_std": float(np.std(temporal_means, ddof=0)),
         }
         for name in requested:
             feature_values[name].append(values[name])
+        for level, percentile in zip(levels, percentiles):
+            feature_values[f"q{percentile:02d}"].append(
+                float(np.quantile(temporal_means, level, method="linear"))
+            )
+        for raw_threshold, label in zip(thresholds, threshold_labels):
+            feature_values[f"hdd{label}"].append(
+                max(raw_threshold - expected_mean, 0.0)
+            )
+            feature_values[f"cdd{label}"].append(
+                max(expected_mean - raw_threshold, 0.0)
+            )
 
     prefix = f"temperature_clim_{seasonal_window_days}d"
     return pd.DataFrame(
         {
             f"{prefix}_{name}": np.asarray(feature_values[name], dtype=float)
-            for name in requested
+            for name in value_names
         },
         index=target.index,
     )
+
+
+def _number_label(value: float) -> str:
+    """Create a stable feature-name component for a configured threshold."""
+
+    return f"{value:g}".replace("-", "m").replace(".", "p")
 
 
 def build_recent_temperature_features(

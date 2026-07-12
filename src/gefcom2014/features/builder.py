@@ -9,6 +9,8 @@ import pandas as pd
 
 from .adjustment import build_seasonal_load_adjustment_features
 from .annual import build_annual_load_anchor_features
+from .derived import build_horizon_decay_features
+from .holiday import HOLIDAY_CATEGORICAL_FEATURES, build_holiday_features
 from .load import build_recent_load_features
 from .profiles import build_recent_load_profile_features
 from .seasonal import build_seasonal_load_features
@@ -21,6 +23,7 @@ from .temperature import (
 
 SUPPORTED_FEATURE_GROUPS = (
     "target_time",
+    "holiday_calendar",
     "recent_load",
     "recent_load_profile",
     "seasonal_load_profile",
@@ -28,6 +31,7 @@ SUPPORTED_FEATURE_GROUPS = (
     "annual_load_anchors",
     "temperature_climatology",
     "recent_temperature",
+    "horizon_decay",
 )
 
 
@@ -61,6 +65,11 @@ def build_feature_matrix(
         if parameters:
             raise ValueError("target_time does not accept configuration parameters")
         blocks.append(target_time)
+    if "holiday_calendar" in feature_groups:
+        parameters = feature_groups["holiday_calendar"] or {}
+        if parameters:
+            raise ValueError("holiday_calendar does not accept configuration parameters")
+        blocks.append(build_holiday_features(target, origin))
     if "recent_load" in feature_groups:
         parameters = dict(feature_groups["recent_load"] or {})
         blocks.append(build_recent_load_features(history, target, origin, **parameters))
@@ -111,7 +120,19 @@ def build_feature_matrix(
             )
         )
 
+    if not blocks:
+        raise ValueError("At least one non-derived feature group must be selected")
     features = pd.concat(blocks, axis=1)
+    if "horizon_decay" in feature_groups:
+        parameters = dict(feature_groups["horizon_decay"] or {})
+        blocks.append(
+            build_horizon_decay_features(
+                features,
+                target_time["horizon_hours"],
+                **parameters,
+            )
+        )
+        features = pd.concat(blocks, axis=1)
     duplicate_columns = features.columns[features.columns.duplicated()].tolist()
     if duplicate_columns:
         raise ValueError(
@@ -130,4 +151,9 @@ def categorical_feature_names(
     unknown = sorted(set(feature_groups) - set(SUPPORTED_FEATURE_GROUPS))
     if unknown:
         raise ValueError(f"Unknown feature groups {unknown}")
-    return TARGET_CATEGORICAL_FEATURES if "target_time" in feature_groups else ()
+    categorical: list[str] = []
+    if "target_time" in feature_groups:
+        categorical.extend(TARGET_CATEGORICAL_FEATURES)
+    if "holiday_calendar" in feature_groups:
+        categorical.extend(HOLIDAY_CATEGORICAL_FEATURES)
+    return tuple(categorical)

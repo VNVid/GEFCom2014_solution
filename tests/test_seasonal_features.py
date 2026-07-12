@@ -89,6 +89,41 @@ def test_seasonal_hour_of_week_profile_wraps_across_year_end() -> None:
     assert features.loc[0, "load_seasonal_how_15d_count"] == 1
 
 
+def test_multiple_hour_of_week_windows_can_use_different_statistics() -> None:
+    features = build_seasonal_load_features(
+        _history(
+            [
+                ("2010-02-02 08:00", 10.0),
+                ("2010-02-09 08:00", 20.0),
+                ("2010-02-16 08:00", 30.0),
+                ("2010-02-23 08:00", 50.0),
+            ]
+        ),
+        _target("2011-02-01 08:00"),
+        origin="2011-02-01",
+        day_type_quantiles=(0.25, 0.75),
+        hour_of_week_profiles=(
+            {"window_days": 15, "statistics": ("mean", "count")},
+            {"window_days": 30, "statistics": ("mean", "std")},
+        ),
+    )
+
+    assert features.columns.tolist() == [
+        "load_seasonal_daytype_8d_q25",
+        "load_seasonal_daytype_8d_q75",
+        "load_seasonal_daytype_8d_count",
+        "load_seasonal_how_15d_mean",
+        "load_seasonal_how_15d_count",
+        "load_seasonal_how_30d_mean",
+        "load_seasonal_how_30d_std",
+    ]
+    assert features.loc[0, "load_seasonal_how_15d_mean"] == pytest.approx(20.0)
+    assert features.loc[0, "load_seasonal_how_30d_mean"] == pytest.approx(27.5)
+    assert features.loc[0, "load_seasonal_how_30d_std"] == pytest.approx(
+        np.std([10.0, 20.0, 30.0, 50.0], ddof=0)
+    )
+
+
 def test_empty_seasonal_pool_is_explicit_nan_with_zero_count() -> None:
     features = build_seasonal_load_features(
         _history([("2010-06-01 09:00", 100.0)]),

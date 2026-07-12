@@ -64,6 +64,42 @@ def test_calendar_year_anchor_exactly_matches_naive_baseline() -> None:
     assert features.loc[7, "load_lag_calendar_1y"] == pytest.approx(baseline[0, 0])
 
 
+def test_multi_year_anchors_produce_target_specific_mean_and_variability() -> None:
+    target = _target("2010-03-01 05:00")
+    target_period = target.loc[7, "period_start"]
+    references = [
+        target_period - pd.DateOffset(years=1),
+        target_period - pd.DateOffset(years=2),
+        target_period - pd.Timedelta(days=364),
+        target_period - pd.Timedelta(days=728),
+    ]
+    history = _history(
+        [(str(period), value) for period, value in zip(references, [100, 200, 300, 400])]
+    )
+
+    features = build_annual_load_anchor_features(
+        history,
+        target,
+        origin="2010-03-01",
+        calendar_year_lags=(1, 2),
+        fixed_day_lags=(364, 728),
+        aggregate_statistics=("mean", "std"),
+    )
+
+    assert features.columns.tolist() == [
+        "load_lag_calendar_1y",
+        "load_lag_calendar_2y",
+        "load_lag_364d",
+        "load_lag_728d",
+        "load_annual_anchor_mean",
+        "load_annual_anchor_std",
+    ]
+    assert features.loc[7, "load_annual_anchor_mean"] == pytest.approx(250.0)
+    assert features.loc[7, "load_annual_anchor_std"] == pytest.approx(
+        np.std([100.0, 200.0, 300.0, 400.0], ddof=0)
+    )
+
+
 def test_calendar_year_anchor_uses_explicit_february_29_mapping() -> None:
     target = _target("2008-02-29 08:00")
     fixed_day_reference = target.loc[7, "period_start"] - pd.Timedelta(days=364)

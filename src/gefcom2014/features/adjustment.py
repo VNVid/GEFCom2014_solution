@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
@@ -19,8 +21,9 @@ def build_seasonal_load_adjustment_features(
     seasonal_window_days: int = 8,
     seasonal_quantile: float = 0.50,
     quantile_method: str = "linear",
+    adjustment_types: Iterable[str] = ("multiplicative",),
 ) -> pd.DataFrame:
-    """Scale a seasonal anchor to the load level observed before ``origin``.
+    """Adjust a seasonal anchor to the load level observed before ``origin``.
 
     For every hour in the complete recent window, a seasonal day-type estimate
     is constructed from earlier annual cycles. The level ratio is the recent
@@ -28,8 +31,10 @@ def build_seasonal_load_adjustment_features(
     target's seasonal estimate by that ratio produces an anchor which retains
     historical shape while reflecting the current system level.
 
-    The recent window ends strictly at ``origin``. If it or any corresponding
-    seasonal estimate is incomplete, both features are ``NaN`` for that zone.
+    The optional additive form shifts the target seasonal anchor by the recent
+    mean residual instead. The recent window ends strictly at ``origin``. If it
+    or any corresponding seasonal estimate is incomplete, every requested
+    adjustment is ``NaN`` for that zone.
     """
 
     forecast_origin = validate_pre_origin_history(
@@ -52,6 +57,12 @@ def build_seasonal_load_adjustment_features(
     percentile = int(round(100 * seasonal_quantile))
     if not np.isclose(100 * seasonal_quantile, percentile):
         raise ValueError("seasonal_quantile must be a whole percentile")
+    requested = tuple(str(value) for value in adjustment_types)
+    unknown = sorted(set(requested) - {"multiplicative", "additive"})
+    if unknown:
+        raise ValueError(f"Unknown seasonal adjustment types {unknown}")
+    if not requested or len(requested) != len(set(requested)):
+        raise ValueError("adjustment_types must be non-empty and unique")
 
     target_samples = previous_seasonal_load_samples(
         history,
@@ -69,14 +80,14 @@ def build_seasonal_load_adjustment_features(
     )
 
     recent_start = forecast_origin - pd.Timedelta(days=recent_window_days)
-    ratio_by_zone: dict[object, float] = {}
+    adjustment_by_zone: dict[object, tuple[float, float]] = {}
     for zone_id in target["zone_id"].unique():
         zone_history = history.loc[history["zone_id"] == zone_id].sort_values(
             "period_start"
         )
         recent = complete_hourly_window(zone_history, recent_start, forecast_origin)
         if recent is None:
-            ratio_by_zone[zone_id] = np.nan
+            adjustment_by_zone[zone_id] = (np.nan, np.nan)
             continue
 
         earlier_cycles = zone_history.loc[
@@ -101,21 +112,26 @@ def build_seasonal_load_adjustment_features(
             ]
         )
         if not np.isfinite(recent_seasonal).all():
-            ratio_by_zone[zone_id] = np.nan
+            adjustment_by_zone[zone_id] = (np.nan, np.nan)
             continue
         seasonal_mean = float(np.mean(recent_seasonal))
-        ratio_by_zone[zone_id] = (
-            float(recent["load"].mean()) / seasonal_mean
-            if seasonal_mean != 0.0
-            else np.nan
-        )
+        recent_mean = float(recent["load"].mean())
+        ratio = recent_mean / seasonal_mean if seasonal_mean != 0.0 else np.nan
+        adjustment_by_zone[zone_id] = (ratio, recent_mean - seasonal_mean)
 
-    ratio = target["zone_id"].map(ratio_by_zone).to_numpy(dtype=float)
+    ratio = target["zone_id"].map(
+        {zone_id: values[0] for zone_id, values in adjustment_by_zone.items()}
+    ).to_numpy(dtype=float)
+    delta = target["zone_id"].map(
+        {zone_id: values[1] for zone_id, values in adjustment_by_zone.items()}
+    ).to_numpy(dtype=float)
     prefix = f"load_seasonal_daytype_{seasonal_window_days}d_q{percentile:02d}"
-    return pd.DataFrame(
-        {
-            f"load_seasonal_level_ratio_{recent_window_days}d": ratio,
-            f"{prefix}_scaled_{recent_window_days}d": target_seasonal * ratio,
-        },
-        index=target.index,
-    )
+    output: dict[str, np.ndarray] = {}
+    for adjustment in requested:
+        if adjustment == "multiplicative":
+            output[f"load_seasonal_level_ratio_{recent_window_days}d"] = ratio
+            output[f"{prefix}_scaled_{recent_window_days}d"] = target_seasonal * ratio
+        else:
+            output[f"load_seasonal_level_delta_{recent_window_days}d"] = delta
+            output[f"{prefix}_shifted_{recent_window_days}d"] = target_seasonal + delta
+    return pd.DataFrame(output, index=target.index)

@@ -60,6 +60,36 @@ def test_temperature_climatology_aggregates_spatial_and_temporal_structure() -> 
     assert features.loc[6, "temperature_clim_0d_temporal_std"] == pytest.approx(10.0)
 
 
+def test_temperature_climatology_adds_quantiles_and_degree_transforms() -> None:
+    features = build_temperature_climatology_features(
+        _history(
+            [
+                ("2009-06-15 08:00", 10.0, 20.0),
+                ("2010-06-15 08:00", 30.0, 40.0),
+            ]
+        ),
+        _target("2011-06-15 08:00"),
+        origin="2011-06-01",
+        seasonal_window_days=0,
+        statistics=("mean",),
+        quantiles=(0.10, 0.90),
+        degree_thresholds=(65,),
+        station_columns=("w1", "w2"),
+    )
+
+    assert features.columns.tolist() == [
+        "temperature_clim_0d_mean",
+        "temperature_clim_0d_q10",
+        "temperature_clim_0d_q90",
+        "temperature_clim_0d_hdd65",
+        "temperature_clim_0d_cdd65",
+    ]
+    assert features.loc[6, "temperature_clim_0d_q10"] == pytest.approx(17.0)
+    assert features.loc[6, "temperature_clim_0d_q90"] == pytest.approx(33.0)
+    assert features.loc[6, "temperature_clim_0d_hdd65"] == pytest.approx(40.0)
+    assert features.loc[6, "temperature_clim_0d_cdd65"] == pytest.approx(0.0)
+
+
 def test_temperature_climatology_wraps_year_end_but_excludes_current_cycle() -> None:
     features = build_temperature_climatology_features(
         _history(

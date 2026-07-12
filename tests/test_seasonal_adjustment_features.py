@@ -63,6 +63,28 @@ def test_recent_level_ratio_scales_the_historical_seasonal_anchor() -> None:
     ] == pytest.approx(200.0)
 
 
+def test_additive_recent_level_shift_is_available_alongside_ratio() -> None:
+    features = build_seasonal_load_adjustment_features(
+        _history_with_recent_level(),
+        _target(),
+        origin="2011-02-01",
+        recent_window_days=1,
+        seasonal_window_days=8,
+        adjustment_types=("multiplicative", "additive"),
+    )
+
+    assert features.columns.tolist() == [
+        "load_seasonal_level_ratio_1d",
+        "load_seasonal_daytype_8d_q50_scaled_1d",
+        "load_seasonal_level_delta_1d",
+        "load_seasonal_daytype_8d_q50_shifted_1d",
+    ]
+    assert features.loc[4, "load_seasonal_level_delta_1d"] == pytest.approx(100.0)
+    assert features.loc[
+        4, "load_seasonal_daytype_8d_q50_shifted_1d"
+    ] == pytest.approx(200.0)
+
+
 def test_incomplete_recent_window_produces_explicit_missing_features() -> None:
     features = build_seasonal_load_adjustment_features(
         _history_with_recent_level(complete_recent_day=False),

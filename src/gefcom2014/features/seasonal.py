@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 
 import numpy as np
 import pandas as pd
@@ -21,6 +21,7 @@ def build_seasonal_load_features(
     include_day_type_count: bool = True,
     hour_of_week_window_days: int = 15,
     hour_of_week_statistics: Iterable[str] = ("mean", "std", "count"),
+    hour_of_week_profiles: Iterable[Mapping[str, object]] | None = None,
     quantile_method: str = "linear",
 ) -> pd.DataFrame:
     """Build robust day-type and weekday-specific seasonal load summaries.
@@ -46,14 +47,12 @@ def build_seasonal_load_features(
     if len(percentile_numbers) != len(set(percentile_numbers)):
         raise ValueError("day_type_quantiles produce duplicate feature names")
 
-    how_statistics = tuple(str(value) for value in hour_of_week_statistics)
-    allowed_statistics = {"mean", "std", "count"}
-    unknown_statistics = sorted(set(how_statistics) - allowed_statistics)
-    if unknown_statistics:
-        raise ValueError(f"Unknown hour_of_week_statistics {unknown_statistics}")
-    if len(how_statistics) != len(set(how_statistics)):
-        raise ValueError("hour_of_week_statistics must not contain duplicates")
-    if levels.size == 0 and not include_day_type_count and not how_statistics:
+    profiles = _normalize_hour_of_week_profiles(
+        hour_of_week_window_days,
+        hour_of_week_statistics,
+        hour_of_week_profiles,
+    )
+    if levels.size == 0 and not include_day_type_count and not profiles:
         raise ValueError("seasonal_load_profile configuration must produce a feature")
 
     day_type_samples = previous_seasonal_load_samples(
@@ -62,13 +61,6 @@ def build_seasonal_load_features(
         window_days=int(day_type_window_days),
         day_match="day_type",
     )
-    hour_of_week_samples = previous_seasonal_load_samples(
-        history,
-        target,
-        window_days=int(hour_of_week_window_days),
-        day_match="day_of_week",
-    )
-
     features = pd.DataFrame(index=target.index)
     for level, percentile in zip(levels, percentile_numbers):
         name = f"load_seasonal_daytype_{day_type_window_days}d_q{percentile:02d}"
@@ -83,25 +75,75 @@ def build_seasonal_load_features(
             [samples.size for samples in day_type_samples], dtype=np.int16
         )
 
-    for statistic in how_statistics:
-        name = f"load_seasonal_how_{hour_of_week_window_days}d_{statistic}"
-        if statistic == "count":
-            values = np.asarray(
-                [samples.size for samples in hour_of_week_samples], dtype=np.int16
-            )
-        elif statistic == "mean":
-            values = np.asarray(
-                [
-                    float(np.mean(samples)) if samples.size else np.nan
-                    for samples in hour_of_week_samples
-                ]
-            )
-        else:
-            values = np.asarray(
-                [
-                    float(np.std(samples, ddof=0)) if samples.size else np.nan
-                    for samples in hour_of_week_samples
-                ]
-            )
-        features[name] = values
+    for window_days, statistics in profiles:
+        hour_of_week_samples = previous_seasonal_load_samples(
+            history,
+            target,
+            window_days=window_days,
+            day_match="day_of_week",
+        )
+        for statistic in statistics:
+            name = f"load_seasonal_how_{window_days}d_{statistic}"
+            if statistic == "count":
+                values = np.asarray(
+                    [samples.size for samples in hour_of_week_samples], dtype=np.int16
+                )
+            elif statistic == "mean":
+                values = np.asarray(
+                    [
+                        float(np.mean(samples)) if samples.size else np.nan
+                        for samples in hour_of_week_samples
+                    ]
+                )
+            else:
+                values = np.asarray(
+                    [
+                        float(np.std(samples, ddof=0)) if samples.size else np.nan
+                        for samples in hour_of_week_samples
+                    ]
+                )
+            features[name] = values
     return features
+
+
+def _normalize_hour_of_week_profiles(
+    window_days: int,
+    statistics: Iterable[str],
+    profiles: Iterable[Mapping[str, object]] | None,
+) -> tuple[tuple[int, tuple[str, ...]], ...]:
+    """Normalize legacy single-window and configured multi-window profiles."""
+
+    raw_profiles: tuple[Mapping[str, object], ...]
+    if profiles is None:
+        raw_profiles = (
+            {"window_days": window_days, "statistics": tuple(statistics)},
+        )
+    else:
+        raw_profiles = tuple(profiles)
+
+    normalized: list[tuple[int, tuple[str, ...]]] = []
+    allowed_statistics = {"mean", "std", "count"}
+    for profile in raw_profiles:
+        unknown_keys = sorted(set(profile) - {"window_days", "statistics"})
+        if unknown_keys:
+            raise ValueError(f"Unknown hour-of-week profile keys {unknown_keys}")
+        if "window_days" not in profile or "statistics" not in profile:
+            raise ValueError(
+                "Each hour-of-week profile requires window_days and statistics"
+            )
+        window = int(profile["window_days"])
+        if window < 0:
+            raise ValueError("Hour-of-week profile windows must be non-negative")
+        profile_statistics = tuple(str(value) for value in profile["statistics"])
+        unknown = sorted(set(profile_statistics) - allowed_statistics)
+        if unknown:
+            raise ValueError(f"Unknown hour_of_week_statistics {unknown}")
+        if not profile_statistics:
+            raise ValueError("Hour-of-week profile statistics must not be empty")
+        if len(profile_statistics) != len(set(profile_statistics)):
+            raise ValueError("hour_of_week_statistics must not contain duplicates")
+        normalized.append((window, profile_statistics))
+    windows = [window for window, _ in normalized]
+    if len(windows) != len(set(windows)):
+        raise ValueError("Hour-of-week profile windows must not contain duplicates")
+    return tuple(normalized)
