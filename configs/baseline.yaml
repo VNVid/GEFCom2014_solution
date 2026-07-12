@@ -1,0 +1,18 @@
+model:
+  seasonal_empirical:
+    window_days: 8
+    quantile_method: linear
+
+evaluation:
+  reference_model: seasonal_naive
+
+outputs:
+  root_dir: artifacts/baseline
+  save_predictions: true
+
+plot:
+  style: whitegrid
+  context: notebook
+  dpi: 150
+  format: png
+  palette: colorblind

@@ -1,0 +1,20 @@
+data:
+  load_dir: data/GEFCom2014-L_V2/Load
+
+backtest:
+  # All boundaries refer to operating interval starts and are half-open.
+  default_split: validation
+  splits:
+    validation:
+      start: "2009-01-01"
+      end: "2011-01-01"
+    test:
+      start: "2011-01-01"
+      end: "2012-01-01"
+
+evaluation:
+  quantiles:
+    start: 0.01
+    stop: 0.99
+    step: 0.01
+  central_intervals: [0.50, 0.80, 0.90, 0.98]
