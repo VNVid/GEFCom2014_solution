@@ -13,6 +13,7 @@ __pycache__/
 
 # Generated local caches (EDA figures/tables are intentionally versioned)
 .cache/
+artifacts/model_data/
 
 # Other
 backup/
