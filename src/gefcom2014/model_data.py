@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+import json
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -22,6 +24,66 @@ class MonthlyModelingDataset:
     metadata: pd.DataFrame
     manifest: pd.DataFrame
     categorical_features: tuple[str, ...]
+
+
+def load_monthly_modeling_dataset(
+    directory: str | Path,
+) -> MonthlyModelingDataset:
+    """Load a cached dataset and restore its declared feature dtypes."""
+
+    root = Path(directory)
+    schema_path = root / "schema.json"
+    dataset_path = root / "dataset.csv.gz"
+    manifest_path = root / "fold_manifest.csv"
+    for path in (schema_path, dataset_path, manifest_path):
+        if not path.is_file():
+            raise FileNotFoundError(f"Missing modeling-data artifact {path}")
+
+    with schema_path.open("r", encoding="utf-8") as stream:
+        schema = json.load(stream)
+    metadata_columns = list(schema["metadata_columns"])
+    target_column = str(schema["target_column"])
+    feature_columns = list(schema["feature_columns"])
+    expected_columns = [*metadata_columns, target_column, *feature_columns]
+    date_columns = [
+        column
+        for column in ("period_start", "origin", "forecast_end")
+        if column in metadata_columns
+    ]
+    frame = pd.read_csv(dataset_path, parse_dates=date_columns)
+    if frame.columns.tolist() != expected_columns:
+        raise ValueError("Cached dataset columns do not match schema.json")
+
+    features = frame.loc[:, feature_columns].copy()
+    feature_dtypes = dict(schema["feature_dtypes"])
+    if set(feature_dtypes) != set(feature_columns):
+        raise ValueError("Cached feature dtypes do not match feature columns")
+    features = features.astype(feature_dtypes)
+    target = frame[target_column].astype(float).rename(target_column)
+    metadata = frame.loc[:, metadata_columns].copy()
+
+    manifest = pd.read_csv(manifest_path)
+    manifest_dates = [
+        column
+        for column in (
+            "origin",
+            "forecast_end",
+            "load_history_start",
+            "load_history_end",
+            "weather_history_start",
+            "weather_history_end",
+        )
+        if column in manifest.columns
+    ]
+    for column in manifest_dates:
+        manifest[column] = pd.to_datetime(manifest[column])
+    return MonthlyModelingDataset(
+        features=features,
+        target=target,
+        metadata=metadata,
+        manifest=manifest,
+        categorical_features=tuple(schema["categorical_features"]),
+    )
 
 
 def build_monthly_modeling_dataset(

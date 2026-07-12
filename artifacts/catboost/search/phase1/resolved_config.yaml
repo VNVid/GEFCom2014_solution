@@ -1,0 +1,65 @@
+backtest:
+  data:
+    load_dir: data/GEFCom2014-L_V2/Load
+  backtest:
+    default_split: validation
+    splits:
+      validation:
+        start: '2009-01-01'
+        end: '2011-01-01'
+      test:
+        start: '2011-01-01'
+        end: '2012-01-01'
+  evaluation:
+    quantiles:
+      start: 0.01
+      stop: 0.99
+      step: 0.01
+    central_intervals:
+    - 0.5
+    - 0.8
+    - 0.9
+    - 0.98
+catboost:
+  data:
+    model_data_dir: artifacts/model_data/validation
+  model:
+    iterations: 500
+    depth: 6
+    learning_rate: 0.03
+    l2_leaf_reg: 3.0
+    random_seed: 42
+    thread_count: -1
+  benchmark:
+    origin: '2009-01-01'
+  search:
+    split: validation
+    reference_model: seasonal_empirical
+    baseline_fold_metrics: artifacts/baseline/validation/fold_metrics.csv
+    common_parameters:
+      random_seed: 42
+      thread_count: -1
+    l2_leaf_reg: 5.0
+    depths:
+    - 4
+    - 6
+    - 8
+    schedules:
+    - learning_rate: 0.04
+      max_iterations: 500
+      iteration_counts:
+      - 250
+      - 375
+      - 500
+    - learning_rate: 0.08
+      max_iterations: 250
+      iteration_counts:
+      - 125
+      - 188
+      - 250
+    training_log_period: 100
+    alert_after_folds: 3
+    alert_relative_degradation: 0.25
+  outputs:
+    root_dir: artifacts/catboost/benchmark
+    search_root_dir: artifacts/catboost/search/phase1
