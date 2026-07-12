@@ -1,0 +1,39 @@
+selected_split: validation
+backtest:
+  data:
+    load_dir: data/GEFCom2014-L_V2/Load
+  backtest:
+    default_split: validation
+    splits:
+      validation:
+        start: '2009-01-01'
+        end: '2011-01-01'
+      test:
+        start: '2011-01-01'
+        end: '2012-01-01'
+  evaluation:
+    quantiles:
+      start: 0.01
+      stop: 0.99
+      step: 0.01
+    central_intervals:
+    - 0.5
+    - 0.8
+    - 0.9
+    - 0.98
+baseline:
+  model:
+    seasonal_empirical:
+      window_days: 8
+      quantile_method: linear
+  evaluation:
+    reference_model: seasonal_naive
+  outputs:
+    root_dir: artifacts/baseline
+    save_predictions: true
+  plot:
+    style: whitegrid
+    context: notebook
+    dpi: 150
+    format: png
+    palette: colorblind

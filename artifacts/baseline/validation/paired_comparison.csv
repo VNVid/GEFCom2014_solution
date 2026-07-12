@@ -1,0 +1,2 @@
+model,reference_model,paired_folds,mean_pinball_difference,std_pinball_difference,median_pinball_difference,relative_pinball_improvement,folds_won,folds_lost,folds_tied,paired_sign_test_pvalue
+seasonal_empirical,seasonal_naive,24,-5.831231925,3.2103628,-4.636807942,0.3929526993,24,0,0,1.192092896e-07
