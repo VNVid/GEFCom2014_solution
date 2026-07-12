@@ -1,0 +1,57 @@
+{
+  "config": {
+    "analysis": {
+      "extreme_quantiles": [
+        0.001,
+        0.999
+      ],
+      "selected_lags_hours": [
+        1,
+        2,
+        3,
+        24,
+        48,
+        168,
+        336,
+        8760
+      ],
+      "temperature_bins": 24,
+      "weather_aggregate": "mean"
+    },
+    "data": {
+      "load_dir": "data/GEFCom2014-L_V2/Load"
+    },
+    "outputs": {
+      "figures_dir": "artifacts/eda/figures",
+      "tables_dir": "artifacts/eda/tables"
+    },
+    "plot": {
+      "context": "notebook",
+      "dpi": 150,
+      "format": "png",
+      "palette": "colorblind",
+      "style": "whitegrid"
+    }
+  },
+  "forecast_hours": 10968,
+  "load_end": "2011-12-31T23:00:00",
+  "load_max": 317.5,
+  "load_mean": 146.17722352634323,
+  "load_min": 16.1,
+  "load_start": "2005-01-01T00:00:00",
+  "load_std": 46.98201890300502,
+  "max_pairwise_station_correlation": 0.9918230501121873,
+  "median_pairwise_station_correlation": 0.9506775859852032,
+  "min_pairwise_station_correlation": 0.8724402716528623,
+  "observed_load_hours": 61344,
+  "previous_year_temperature_proxy_mae_mean": 8.077026088069637,
+  "rounds": 15,
+  "temperature_max_station_value": 104.0,
+  "temperature_mean": 60.83724628661522,
+  "temperature_min_station_value": -4.0,
+  "weather_first_3_pc_variance_share": 0.9727810127935507,
+  "weather_first_5_pc_variance_share": 0.9814535320046381,
+  "weather_hours": 96408,
+  "weather_only_hours": 35064,
+  "weather_pc1_variance_share": 0.9499714420919224
+}

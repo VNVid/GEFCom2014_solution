@@ -1,0 +1,16 @@
+check,value
+rows_total,96408
+weather_start_hour_ending,2001-01-01T01:00:00
+weather_end_hour_ending,2012-01-01T00:00:00
+load_start_hour_ending,2005-01-01T01:00:00
+load_end_hour_ending,2012-01-01T00:00:00
+observed_load_rows,61344
+missing_load_rows,35064
+missing_load_blocks,1
+missing_weather_values,0
+duplicate_timestamps,0
+non_hourly_steps,0
+operating_days_not_24_hours,0
+zones,1
+weather_stations,25
+nonpositive_load_rows,0
