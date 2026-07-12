@@ -265,8 +265,11 @@ def load_training_history(load_dir: str | Path, through_task: int) -> pd.DataFra
 def load_complete_history(load_dir: str | Path, include_solution: bool = True) -> pd.DataFrame:
     """Assemble all sequential releases for retrospective analysis.
 
-    This function is suitable for EDA only.  Modeling code should call
-    :func:`load_training_history` separately at every rolling origin.
+    Use this directly for whole-period descriptive analysis. Official-round
+    forecasting should call :func:`load_training_history` at each release.
+    Arbitrary-origin retrospective evaluation should use
+    :func:`load_backtest_actuals`, followed by an explicit per-origin slice in
+    the backtesting module. The complete frame must never be passed to a model.
     """
 
     rounds = discover_round_files(load_dir)
@@ -276,6 +279,21 @@ def load_complete_history(load_dir: str | Path, include_solution: bool = True) -
     history = pd.concat(pieces, ignore_index=True).sort_values("timestamp", ignore_index=True)
     _assert_unique_timestamps(history, context="complete retrospective history")
     return history
+
+
+def load_backtest_actuals(load_dir: str | Path) -> pd.DataFrame:
+    """Return the complete observed-load timeline used as a backtest label store.
+
+    This function deliberately exposes outcomes from every release so arbitrary
+    historical folds can be evaluated, including folds before Task 1.  It does
+    not define forecast-time availability: backtesting code must take a fresh
+    ``timestamp < origin`` slice for every fold before fitting or forecasting.
+    """
+
+    history = load_complete_history(load_dir, include_solution=True)
+    observed = history.dropna(subset=["load"]).reset_index(drop=True)
+    _assert_unique_timestamps(observed, context="backtest actuals")
+    return observed
 
 
 def actuals_for_round(load_dir: str | Path, task_id: int) -> pd.DataFrame:
