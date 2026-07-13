@@ -6,7 +6,7 @@ The goal of this project is to forecast hourly electricity demand one month ahea
 
 ## Dataset and EDA
 
-The GEFCom2014 load track ([Hong et al., 2016](https://doi.org/10.1016/j.ijforecast.2016.02.001)) contains 15 sequential monthly forecasting rounds, covering one load zone and 25 temperature stations. It includes 96,408 hourly weather observations from 2001–2011 and 61,344 observed load values from 2005–2011. The earlier missing load values form an intentional weather-only period; otherwise, no missing weather data, duplicate timestamps, hourly gaps, nonpositive loads, or clear signs of corruption were found, so the data was retained as provided.
+The GEFCom2014 load track ([Hong et al., 2016](https://doi.org/10.1016/j.ijforecast.2016.02.001)) contains hourly electricity load for a single zone from 2005 to 2011, together with hourly observations from 25 temperature stations covering 2001 to 2011. In total, it includes 96,408 weather observations and 61,344 observed load values. The earlier missing load values form an intentional weather-only period; otherwise, no missing weather data, duplicate timestamps, hourly gaps, nonpositive loads, or clear signs of corruption were found, so the data was retained as provided.
 
 The main patterns are strong hourly, weekly, and seasonal demand cycles, high dependence on recent load values, and a nonlinear U-shaped relationship between load and temperature. A more detailed analysis of data quality, seasonality, weather effects, serial dependence, and extreme observations is available in the [EDA report](artifacts/eda/report.md).
 
@@ -26,7 +26,7 @@ An obvious starting point is seasonal persistence: demand at a given hour is lik
 
 **Baseline 1: Seasonal naive.** For each target operating hour, the load from the same calendar hour one year earlier is used as the forecast and repeated across all 99 quantiles. Pinball loss remains mathematically well-defined for this forecast, but the identical quantiles form a degenerate distribution with zero spread. The baseline therefore provides a useful point-forecast reference but cannot represent forecast uncertainty or produce calibrated prediction intervals.
 
-This limitation motivates a simple probabilistic baseline. Instead of relying on one historical value, the seasonal empirical method treats several comparable observations from neighbouring dates and previous years as a sample from the predictive distribution. Matching the operating hour and separating weekdays from weekends provides basic similarity criteria while keeping the method transparent and free of future information.
+This limitation motivates a simple probabilistic baseline which is defined below. Instead of relying on one historical value, the seasonal empirical method treats several comparable observations from neighbouring dates and previous years as a sample from the predictive distribution. Matching the operating hour and separating weekdays from weekends provides basic similarity criteria while keeping the method transparent and free of future information.
 
 **Baseline 2: Seasonal empirical.** For every target operating hour:
 
