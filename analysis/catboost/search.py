@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 import gc
+from itertools import product
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -28,6 +29,7 @@ from gefcom2014.models import (
     effective_candidate_name,
     fit_catboost_quantiles,
     predict_catboost_quantiles,
+    resolve_l2_leaf_regs,
     summarize_search_results,
 )
 
@@ -46,11 +48,45 @@ def _atomic_csv(frame: pd.DataFrame, path: Path) -> None:
     temporary.replace(path)
 
 
+def _atomic_yaml(data: dict[str, Any], path: Path) -> None:
+    temporary = path.with_name(f".{path.name}.tmp")
+    with temporary.open("w", encoding="utf-8") as stream:
+        yaml.safe_dump(data, stream, sort_keys=False)
+    temporary.replace(path)
+
+
 def _log(message: str, path: Path) -> None:
     stamped = f"[{datetime.now().isoformat(timespec='seconds')}] {message}"
     print(stamped, flush=True)
     with path.open("a", encoding="utf-8") as stream:
         stream.write(stamped + "\n")
+
+
+def _resolve_feature_subset(
+    dataset, data_config: dict[str, Any]
+) -> tuple[list[str], list[str]]:
+    manifest_path = data_config.get("selected_features_path")
+    if manifest_path is None:
+        return list(dataset.features.columns), list(dataset.categorical_features)
+
+    manifest = _read_yaml(Path(manifest_path))
+    features = [str(value) for value in manifest.get("features", [])]
+    if not features or len(features) != len(set(features)):
+        raise ValueError("Selected-feature manifest must contain unique features")
+    missing = sorted(set(features) - set(dataset.features.columns))
+    if missing:
+        raise ValueError(f"Selected features are absent from model data: {missing}")
+    categorical = [
+        feature for feature in dataset.categorical_features if feature in features
+    ]
+    declared_categorical = [
+        str(value) for value in manifest.get("categorical_features", [])
+    ]
+    if set(declared_categorical) != set(categorical):
+        raise ValueError(
+            "Selected-feature categorical declaration does not match model data"
+        )
+    return features, categorical
 
 
 def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
@@ -63,6 +99,9 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
     split = backtest["backtest"]["splits"][split_name]
     origins = pd.date_range(split["start"], split["end"], freq="MS", inclusive="left")
     dataset = load_monthly_modeling_dataset(config["data"]["model_data_dir"])
+    feature_names, categorical_features = _resolve_feature_subset(
+        dataset, config["data"]
+    )
 
     baseline = pd.read_csv(search["baseline_fold_metrics"], parse_dates=["origin"])
     baseline = baseline.loc[
@@ -75,7 +114,7 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
     baseline_by_origin = baseline.set_index("origin")["pinball_loss"].to_dict()
 
     candidates = build_catboost_candidates(search)
-    l2 = float(search["l2_leaf_reg"])
+    l2_values = resolve_l2_leaf_regs(search)
     common_parameters = dict(search["common_parameters"])
     managed = {"depth", "learning_rate", "iterations", "l2_leaf_reg"}
     overlap = sorted(managed & set(common_parameters))
@@ -87,10 +126,18 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
     progress_path = output_dir / "fold_results.csv"
     summary_path = output_dir / "candidate_summary.csv"
     log_path = output_dir / "progress.log"
-    with (output_dir / "resolved_config.yaml").open("w", encoding="utf-8") as stream:
-        yaml.safe_dump(
-            {"backtest": backtest, "catboost": config}, stream, sort_keys=False
-        )
+    resolved_path = output_dir / "resolved_config.yaml"
+    resolved = {
+        "backtest": backtest,
+        "catboost": config,
+        "selected_features": feature_names,
+        "categorical_features": categorical_features,
+    }
+    if resolved_path.is_file():
+        if _read_yaml(resolved_path) != resolved:
+            raise ValueError("Existing search artifacts use a different configuration")
+    else:
+        _atomic_yaml(resolved, resolved_path)
 
     if progress_path.is_file():
         results = pd.read_csv(progress_path, parse_dates=["origin"])
@@ -100,25 +147,34 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
             results["invalid_90_intervals"] = 0
     else:
         results = pd.DataFrame()
-    total_fits = len(candidates) * len(origins)
+    total_fits = len(candidates) * len(l2_values) * len(origins)
     _log(
-        f"SEARCH START base_candidates={len(candidates)} origins={len(origins)} "
+        f"SEARCH START base_candidates={len(candidates) * len(l2_values)} "
+        f"effective_candidates="
+        f"{sum(len(base.iteration_counts) for base in candidates) * len(l2_values)} "
+        f"features={len(feature_names)} origins={len(origins)} "
         f"actual_fits={total_fits} resumed_rows={len(results)}",
         log_path,
     )
 
     run_start = perf_counter()
-    for base in candidates:
+    for base, l2 in product(candidates, l2_values):
+        regularization = f"{l2:g}".replace(".", "p")
+        fit_candidate = (
+            f"{base.name}_l2{regularization}"
+            if len(l2_values) > 1
+            else base.name
+        )
         for origin in origins:
             if not results.empty:
                 completed = results.loc[
-                    results["base_candidate"].eq(base.name)
+                    results["base_candidate"].eq(fit_candidate)
                     & results["origin"].eq(origin),
                     "iterations",
                 ]
                 if set(completed.astype(int)) == set(base.iteration_counts):
                     _log(
-                        f"SKIP {base.name} origin={origin.date()} already complete",
+                        f"SKIP {fit_candidate} origin={origin.date()} already complete",
                         log_path,
                     )
                     continue
@@ -126,11 +182,13 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
             training_mask, evaluation_mask = rolling_origin_masks(
                 dataset.metadata, origin
             )
-            train_features = dataset.features.loc[training_mask].reset_index(drop=True)
+            train_features = dataset.features.loc[
+                training_mask, feature_names
+            ].reset_index(drop=True)
             train_target = dataset.target.loc[training_mask].reset_index(drop=True)
-            evaluation_features = dataset.features.loc[evaluation_mask].reset_index(
-                drop=True
-            )
+            evaluation_features = dataset.features.loc[
+                evaluation_mask, feature_names
+            ].reset_index(drop=True)
             actual = dataset.target.loc[evaluation_mask].to_numpy(dtype=float)
             parameters = {
                 **common_parameters,
@@ -146,7 +204,7 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
                 else len(results[["base_candidate", "origin"]].drop_duplicates())
             )
             _log(
-                f"FIT {completed_fits + 1}/{total_fits} {base.name} "
+                f"FIT {completed_fits + 1}/{total_fits} {fit_candidate} "
                 f"origin={origin.date()} train={training_mask.sum()} "
                 f"eval={evaluation_mask.sum()} max_trees={base.max_iterations}",
                 log_path,
@@ -156,7 +214,7 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
                 train_features,
                 train_target,
                 QUANTILES,
-                dataset.categorical_features,
+                categorical_features,
                 parameters,
                 verbose=int(search["training_log_period"]),
             )
@@ -181,7 +239,7 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
                 invalid_90 = lower_90 > upper_90
                 valid_widths = (upper_90 - lower_90)[~invalid_90]
                 record = {
-                    "base_candidate": base.name,
+                    "base_candidate": fit_candidate,
                     "candidate": candidate,
                     "origin": origin,
                     "depth": base.depth,
@@ -240,7 +298,7 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
                     candidate_summary["candidate"].eq(candidate)
                 ].iloc[0]
                 _log(
-                    f"RUNNING {candidate} folds={int(row['folds'])}/24 "
+                    f"RUNNING {candidate} folds={int(row['folds'])}/{len(origins)} "
                     f"loss={row['pinball_loss']:.4f} "
                     f"baseline={row['baseline_pinball_loss']:.4f} "
                     f"improvement={100 * row['relative_improvement']:+.2f}%",
@@ -265,7 +323,7 @@ def run(backtest_config_path: Path, catboost_config_path: Path) -> pd.DataFrame:
             average_fit = float(unique_fits["fit_seconds"].mean())
             remaining = total_fits - len(unique_fits)
             _log(
-                f"FIT DONE {base.name} origin={origin.date()} "
+                f"FIT DONE {fit_candidate} origin={origin.date()} "
                 f"seconds={fit_seconds:.1f} "
                 f"completed={len(unique_fits)}/{total_fits} "
                 f"rough_remaining_hours={remaining * average_fit / 3600:.2f}",

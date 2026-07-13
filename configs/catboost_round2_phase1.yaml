@@ -1,0 +1,23 @@
+data:
+  model_data_dir: artifacts/model_data/round2_validation
+  selected_features_path: artifacts/catboost/feature_selection/round2/selected_features.yaml
+
+search:
+  split: round2_validation
+  reference_model: seasonal_empirical
+  baseline_fold_metrics: artifacts/baseline/validation/fold_metrics.csv
+  common_parameters:
+    random_seed: 42
+    thread_count: -1
+  l2_leaf_regs: [1.0, 5.0, 20.0]
+  depths: [3, 4, 5]
+  schedules:
+    - learning_rate: 0.08
+      max_iterations: 125
+      iteration_counts: [75, 100, 125]
+  training_log_period: 50
+  alert_after_folds: 3
+  alert_relative_degradation: 0.25
+
+outputs:
+  search_root_dir: artifacts/catboost/search/round2_phase1

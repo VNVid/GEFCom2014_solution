@@ -58,6 +58,26 @@ def build_catboost_candidates(
     return tuple(candidates)
 
 
+def resolve_l2_leaf_regs(search: dict[str, Any]) -> tuple[float, ...]:
+    """Validate scalar or grid-form L2 regularization configuration."""
+
+    has_scalar = "l2_leaf_reg" in search
+    has_grid = "l2_leaf_regs" in search
+    if has_scalar == has_grid:
+        raise ValueError("Configure exactly one of l2_leaf_reg or l2_leaf_regs")
+    raw_values = (
+        [search["l2_leaf_reg"]]
+        if has_scalar
+        else list(search["l2_leaf_regs"])
+    )
+    values = tuple(float(value) for value in raw_values)
+    if not values or any(not np.isfinite(value) or value <= 0 for value in values):
+        raise ValueError("L2 regularization values must be finite and positive")
+    if len(values) != len(set(values)):
+        raise ValueError("L2 regularization values must be unique")
+    return values
+
+
 def effective_candidate_name(
     base: CatBoostBaseCandidate, iterations: int, l2: float
 ) -> str:

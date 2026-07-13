@@ -3,7 +3,11 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from gefcom2014.models import build_catboost_candidates, summarize_search_results
+from gefcom2014.models import (
+    build_catboost_candidates,
+    resolve_l2_leaf_regs,
+    summarize_search_results,
+)
 
 
 def test_search_expands_joint_depth_and_learning_rate_families() -> None:
@@ -60,3 +64,27 @@ def test_candidate_summary_uses_hour_weighted_pinball_loss() -> None:
     assert summary["relative_improvement"] == pytest.approx(0.3)
     assert summary["invalid_90_intervals"] == 2
     assert summary["quantile_crossings"] == 5
+
+
+def test_l2_regularization_accepts_scalar_or_grid() -> None:
+    assert resolve_l2_leaf_regs({"l2_leaf_reg": 5}) == (5.0,)
+    assert resolve_l2_leaf_regs({"l2_leaf_regs": [1, 5, 20]}) == (
+        1.0,
+        5.0,
+        20.0,
+    )
+
+
+@pytest.mark.parametrize(
+    "search",
+    [
+        {},
+        {"l2_leaf_reg": 5, "l2_leaf_regs": [1, 5]},
+        {"l2_leaf_regs": []},
+        {"l2_leaf_regs": [5, 5]},
+        {"l2_leaf_reg": 0},
+    ],
+)
+def test_l2_regularization_rejects_ambiguous_or_invalid_values(search) -> None:
+    with pytest.raises(ValueError):
+        resolve_l2_leaf_regs(search)
