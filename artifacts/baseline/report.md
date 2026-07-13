@@ -130,8 +130,6 @@ Other limitations are:
   anticipated.
 - Forecasts provide only marginal hourly quantiles and do not define coherent
   joint hourly scenarios.
-- Monthly errors remain strongly seasonal, so the 24 folds should not be
-  interpreted as independent hourly experiments.
 
 ## Reproduction and artifacts
 
