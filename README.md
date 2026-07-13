@@ -113,9 +113,16 @@ $o_j$, rather than using information available at the later fitting date. A
 historical month enters the training set only after all of its outcomes have
 been observed. Thus, at origin $o_m$, the expanding training set is
 
-$$
-\mathcal{D}(o_m) = \left\{\bigl(X(o_j,t),Y_t\bigr): t\in\mathcal{T}_j,\ o_{j+1}\leq o_m\right\}.
-$$
+```math
+\mathcal{D}(o_m)
+=
+\left\lbrace
+\bigl(X(o_j,t),Y_t\bigr)
+:
+t\in\mathcal{T}_j,\;
+o_{j+1}\leq o_m
+\right\rbrace.
+```
 
 The learned models jointly estimate the 99 conditional quantiles
 $\mathcal{Q}=\{0.01,\ldots,0.99\}$:
@@ -150,7 +157,20 @@ For $N$ training examples $(x_i,y_i)$ and quantile levels
 $\mathcal{Q}=\{0.01,\ldots,0.99\}$, the optimized objective is the mean pinball
 loss across observations and quantiles:
 
-$$\widehat\theta = \underset{\theta}{\operatorname{arg\,min}}\ \frac{1}{N|\mathcal{Q}|}\sum_{i=1}^{N}\sum_{\tau\in\mathcal{Q}}\rho_\tau\left(y_i-f_\tau(x_i;\theta)\right), \qquad \rho_\tau(u)=u\left(\tau-\mathbf{1}\{u < 0\}\right).$$
+```math
+\widehat{\theta}
+=
+\underset{\theta}{\mathrm{arg\,min}}
+\;
+\frac{1}{N\lvert\mathcal{Q}\rvert}
+\sum_{i=1}^{N}
+\sum_{\tau\in\mathcal{Q}}
+\rho_\tau\left(y_i-f_\tau(x_i;\theta)\right),
+\qquad
+\rho_\tau(u)
+=
+u\left(\tau-\mathbf{1}_{\lbrace u<0\rbrace}\right).
+```
 
 This directly aligns model fitting with the task metric and produces all
 99 quantiles from one model. The forecast is also **direct**, rather than
