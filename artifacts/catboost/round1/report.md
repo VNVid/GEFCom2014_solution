@@ -396,6 +396,17 @@ the full coverage errors and mean widths are recorded in
 
 ## What the search learned
 
+The search evaluated 18 effective candidates, each on all 24 rolling-origin
+folds. Tree checkpoints from the same depth and learning-rate schedule shared a
+single parent fit.
+
+| Hyperparameter | Values |
+|---|---|
+| Tree depth | 4, 6, 8 |
+| Learning rate 0.04 | 250, 375, or 500 trees |
+| Learning rate 0.08 | 125, 188, or 250 trees |
+| L2 leaf regularization | 5 (fixed) |
+
 | Depth | Learning rate | Trees | Pinball loss | Improvement (%) | 90% coverage | Calibration MAE | Crossings |
 |---|---|---|---|---|---|---|---|
 | 4 | 0.04 | 250 | 8.382 | +6.39 | 0.767 | 0.146 | 2155 |

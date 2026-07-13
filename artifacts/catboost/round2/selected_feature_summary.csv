@@ -1,0 +1,18 @@
+group,feature,definition,median_loss_function_change,positive_folds,selection_reason,selected,selection_rank,source
+Seasonal load,load_seasonal_how_30d_mean,Mean prior-cycle load matching exact target weekday and hour within ±30 calendar days.,1.148312447,6,eligible,True,1,New in round 2
+Seasonal load,load_seasonal_how_15d_mean,Mean prior-cycle load matching exact target weekday and hour within ±15 calendar days.,0.5117077727,6,eligible,True,2,Round 1
+Target time,month,"Target calendar month, 1–12.",0.4276625165,4,eligible,True,3,Round 1
+Seasonal load,load_seasonal_daytype_8d_q90,90th percentile of the same ±8-day day-type analogue pool.,0.2171196067,4,eligible,True,4,Round 1
+Seasonal load,load_seasonal_how_15d_count,Number of observations in the exact-weekday/hour ±15-day analogue pool.,0.1835946834,4,eligible,True,5,Round 1
+Seasonal load,load_seasonal_daytype_8d_q75,75th percentile of the same ±8-day day-type analogue pool.,0.09784270976,4,eligible,True,6,New in round 2
+Recent load,load_yoy_ratio_365d,Recent 365-day mean divided by the preceding calendar-aligned 365-day mean.,0.089486223,4,eligible,True,7,Round 1
+Target time,seasonal_day_sin,Sine of the target month/day position in a fixed 366-day leap year.,0.08478817277,4,eligible,True,8,Round 1
+Temperature climatology,temperature_clim_15d_q10,10th percentile of station-mean temperature across target-hour ±15-day analogues.,0.07428505069,4,eligible,True,9,New in round 2
+Recent temperature,temperature_recent_std_7d,Population standard deviation over 7 days of hourly temperature after averaging stations.,0.03269045223,4,eligible,True,10,Round 1
+Seasonal load,load_seasonal_daytype_8d_q25,25th percentile of the same ±8-day day-type analogue pool.,0.02873952419,4,eligible,True,11,New in round 2
+Level adjustment,load_seasonal_daytype_8d_q50_scaled_28d,Target seasonal median multiplied by `load_seasonal_level_ratio_28d`.,0.025366794,4,eligible,True,12,Round 1
+Seasonal load,load_seasonal_how_15d_std,Population standard deviation in the exact-weekday/hour ±15-day analogue pool.,0.01174384579,5,eligible,True,13,Round 1
+Temperature climatology,temperature_clim_15d_hdd65,"`max(65 - climatological mean temperature, 0)` in the supplied temperature units.",0.00962723625,4,eligible,True,14,New in round 2
+Seasonal load,load_seasonal_how_30d_std,Population standard deviation in the exact-weekday/hour ±30-day analogue pool.,0.00847158666,4,eligible,True,15,New in round 2
+Temperature climatology,temperature_clim_15d_q90,90th percentile of station-mean temperature across target-hour ±15-day analogues.,0.006178166061,4,eligible,True,16,New in round 2
+Target time,hour,"Target hour of day, 0–23.",0.003981585737,4,eligible,True,17,Round 1

@@ -36,6 +36,339 @@ EMPIRICAL_LABEL = "Seasonal empirical"
 NAIVE_LABEL = "Seasonal naive"
 ROUND1_CANDIDATE = "depth4_lr0p04_l25_trees250"
 
+ROUND2_FEATURE_DICTIONARY = (
+    ("Target time", "hour", "Target hour of day, 0–23."),
+    ("Target time", "day_of_week", "Target weekday, with Monday=0 and Sunday=6."),
+    (
+        "Target time",
+        "hour_of_week",
+        "`24 * day_of_week + hour`, giving values 0–167.",
+    ),
+    ("Target time", "month", "Target calendar month, 1–12."),
+    (
+        "Target time",
+        "is_weekend",
+        "1 for a Saturday or Sunday target, otherwise 0.",
+    ),
+    ("Target time", "hour_sin", "`sin(2π * hour / 24)`."),
+    ("Target time", "hour_cos", "`cos(2π * hour / 24)`."),
+    (
+        "Target time",
+        "seasonal_day_sin",
+        "Sine of the target month/day position in a fixed 366-day leap year.",
+    ),
+    (
+        "Target time",
+        "seasonal_day_cos",
+        "Cosine of the target month/day position in the same fixed leap year.",
+    ),
+    (
+        "Horizon",
+        "horizon_hours",
+        "Integer hours from the monthly origin to the target; the first hour is 0.",
+    ),
+    (
+        "Horizon",
+        "forecast_week",
+        "Zero-based seven-day horizon bucket: `floor(horizon_hours / 168)`.",
+    ),
+    (
+        "Holiday",
+        "holiday_name",
+        "US federal holiday name for the target day, including observed dates; `none` otherwise.",
+    ),
+    (
+        "Holiday",
+        "is_holiday",
+        "1 when the target day is a US federal holiday or its observed date.",
+    ),
+    (
+        "Holiday",
+        "is_working_day",
+        "1 for Monday–Friday targets that are not federal holidays.",
+    ),
+    (
+        "Holiday",
+        "is_day_before_holiday",
+        "1 when the following calendar day is a federal holiday.",
+    ),
+    (
+        "Holiday",
+        "is_day_after_holiday",
+        "1 when the preceding calendar day is a federal holiday.",
+    ),
+    (
+        "Holiday",
+        "is_year_end_holiday_period",
+        "1 from December 24–31 or January 1–2.",
+    ),
+    (
+        "Recent load",
+        "load_mean_7d",
+        "Mean hourly load over the complete 7 days before the origin.",
+    ),
+    (
+        "Recent load",
+        "load_mean_28d",
+        "Mean hourly load over the complete 28 days before the origin.",
+    ),
+    (
+        "Recent load",
+        "load_mean_90d",
+        "Mean hourly load over the complete 90 days before the origin.",
+    ),
+    (
+        "Recent load",
+        "load_mean_365d",
+        "Mean hourly load over the complete 365 days before the origin.",
+    ),
+    (
+        "Recent load",
+        "load_std_28d",
+        "Population standard deviation of hourly load over the complete 28 days before the origin.",
+    ),
+    (
+        "Recent load",
+        "load_mean_7d_minus_28d",
+        "`load_mean_7d - load_mean_28d`, measuring very-recent level change.",
+    ),
+    (
+        "Recent load",
+        "load_mean_28d_minus_90d",
+        "`load_mean_28d - load_mean_90d`, measuring medium-term level change.",
+    ),
+    (
+        "Recent load",
+        "load_daily_slope_28d",
+        "OLS slope in MW/day through the 28 pre-origin daily mean loads.",
+    ),
+    (
+        "Recent load",
+        "load_yoy_ratio_28d",
+        "Recent 28-day mean divided by the corresponding 28-day mean one calendar year earlier.",
+    ),
+    (
+        "Recent load",
+        "load_yoy_ratio_365d",
+        "Recent 365-day mean divided by the preceding calendar-aligned 365-day mean.",
+    ),
+    (
+        "Recent profile",
+        "load_last_day_same_hour",
+        "Load at the target hour of day in the final complete day before the origin.",
+    ),
+    (
+        "Recent profile",
+        "load_last_same_hour_of_week",
+        "Most recent pre-origin load with the target weekday and hour.",
+    ),
+    (
+        "Recent profile",
+        "load_how_mean_4w",
+        "Mean load for the target hour of week over the final 4 complete weeks.",
+    ),
+    (
+        "Recent profile",
+        "load_how_mean_12w",
+        "Mean load for the target hour of week over the final 12 complete weeks.",
+    ),
+    (
+        "Recent profile",
+        "load_how_std_12w",
+        "Population standard deviation for the target hour of week over the final 12 complete weeks.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_daytype_8d_q10",
+        "10th percentile of prior-cycle loads matching target hour and weekday/weekend type within ±8 calendar days.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_daytype_8d_q25",
+        "25th percentile of the same ±8-day day-type analogue pool.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_daytype_8d_q50",
+        "Median of the same ±8-day day-type analogue pool.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_daytype_8d_q75",
+        "75th percentile of the same ±8-day day-type analogue pool.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_daytype_8d_q90",
+        "90th percentile of the same ±8-day day-type analogue pool.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_daytype_8d_count",
+        "Number of observations in the ±8-day day-type analogue pool.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_how_15d_mean",
+        "Mean prior-cycle load matching exact target weekday and hour within ±15 calendar days.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_how_15d_std",
+        "Population standard deviation in the exact-weekday/hour ±15-day analogue pool.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_how_15d_count",
+        "Number of observations in the exact-weekday/hour ±15-day analogue pool.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_how_30d_mean",
+        "Mean prior-cycle load matching exact target weekday and hour within ±30 calendar days.",
+    ),
+    (
+        "Seasonal load",
+        "load_seasonal_how_30d_std",
+        "Population standard deviation in the exact-weekday/hour ±30-day analogue pool.",
+    ),
+    (
+        "Level adjustment",
+        "load_seasonal_level_ratio_28d",
+        "Observed 28-day mean divided by the mean historical seasonal median estimated for those pre-origin hours.",
+    ),
+    (
+        "Level adjustment",
+        "load_seasonal_daytype_8d_q50_scaled_28d",
+        "Target seasonal median multiplied by `load_seasonal_level_ratio_28d`.",
+    ),
+    (
+        "Level adjustment",
+        "load_seasonal_level_delta_28d",
+        "Observed 28-day mean minus the mean historical seasonal median for those pre-origin hours.",
+    ),
+    (
+        "Level adjustment",
+        "load_seasonal_daytype_8d_q50_shifted_28d",
+        "Target seasonal median plus `load_seasonal_level_delta_28d`.",
+    ),
+    (
+        "Annual anchor",
+        "load_lag_calendar_1y",
+        "Load at the target timestamp minus one calendar year; preserves month, day, and hour.",
+    ),
+    (
+        "Annual anchor",
+        "load_lag_calendar_2y",
+        "Load at the target timestamp minus two calendar years.",
+    ),
+    (
+        "Annual anchor",
+        "load_lag_364d",
+        "Load 364 days earlier; preserves weekday and hour because 364 days is 52 weeks.",
+    ),
+    (
+        "Annual anchor",
+        "load_lag_728d",
+        "Load 728 days earlier; preserves weekday and hour across 104 weeks.",
+    ),
+    (
+        "Annual anchor",
+        "load_annual_anchor_mean",
+        "Mean of the 1-year, 2-year, 364-day, and 728-day load anchors.",
+    ),
+    (
+        "Annual anchor",
+        "load_annual_anchor_std",
+        "Population standard deviation across the same four annual anchors.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_mean",
+        "Mean temperature across stations and prior-cycle target-hour analogues within ±15 calendar days.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_min_station",
+        "Minimum across station-specific mean temperatures in the ±15-day analogue pool.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_max_station",
+        "Maximum across station-specific mean temperatures in the ±15-day analogue pool.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_station_std",
+        "Population standard deviation across station-specific analogue means; a spatial spread measure.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_temporal_std",
+        "Population standard deviation across analogue-hour station means; a temporal uncertainty measure.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_q10",
+        "10th percentile of station-mean temperature across target-hour ±15-day analogues.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_q90",
+        "90th percentile of station-mean temperature across target-hour ±15-day analogues.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_hdd65",
+        "`max(65 - climatological mean temperature, 0)` in the supplied temperature units.",
+    ),
+    (
+        "Temperature climatology",
+        "temperature_clim_15d_cdd65",
+        "`max(climatological mean temperature - 65, 0)` in the supplied temperature units.",
+    ),
+    (
+        "Recent temperature",
+        "temperature_recent_mean_1d",
+        "Mean observed temperature across stations and hours in the complete day before the origin.",
+    ),
+    (
+        "Recent temperature",
+        "temperature_recent_mean_7d",
+        "Mean observed temperature across stations and hours in the complete 7 days before the origin.",
+    ),
+    (
+        "Recent temperature",
+        "temperature_recent_mean_28d",
+        "Mean observed temperature across stations and hours in the complete 28 days before the origin.",
+    ),
+    (
+        "Recent temperature",
+        "temperature_recent_std_7d",
+        "Population standard deviation over 7 days of hourly temperature after averaging stations.",
+    ),
+    (
+        "Recent temperature",
+        "temperature_recent_anomaly_7d",
+        "Observed 7-day mean minus historical seasonal expectations for those same pre-origin hours.",
+    ),
+    (
+        "Horizon decay",
+        "temperature_recent_anomaly_7d_decay_14d",
+        "`temperature_recent_anomaly_7d * exp(-horizon_hours / (24 * 14))`.",
+    ),
+    (
+        "Horizon decay",
+        "load_last_day_same_hour_decay_2d",
+        "`load_last_day_same_hour * exp(-horizon_hours / (24 * 2))`.",
+    ),
+    (
+        "Horizon decay",
+        "load_last_same_hour_of_week_decay_7d",
+        "`load_last_same_hour_of_week * exp(-horizon_hours / (24 * 7))`.",
+    ),
+)
+
 
 def _weighted_average(frame: pd.DataFrame, column: str) -> float:
     return float(
@@ -347,6 +680,53 @@ def _table(headers: list[str], rows: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
+def _build_feature_dictionary(
+    feature_ranking: pd.DataFrame,
+    round1_features: set[str],
+) -> pd.DataFrame:
+    dictionary = pd.DataFrame(
+        ROUND2_FEATURE_DICTIONARY,
+        columns=["group", "feature", "definition"],
+    )
+    dictionary["candidate_order"] = np.arange(len(dictionary))
+    if len(dictionary) != 70 or dictionary["feature"].duplicated().any():
+        raise ValueError("Round-two feature dictionary must define 70 unique features")
+
+    ranking_columns = [
+        "feature",
+        "median_loss_function_change",
+        "positive_folds",
+        "selection_reason",
+        "selected",
+        "selection_rank",
+    ]
+    missing_columns = set(ranking_columns) - set(feature_ranking.columns)
+    if missing_columns:
+        raise ValueError(
+            "Feature ranking is missing columns: "
+            + ", ".join(sorted(missing_columns))
+        )
+    if set(dictionary["feature"]) != set(feature_ranking["feature"]):
+        missing = sorted(set(feature_ranking["feature"]) - set(dictionary["feature"]))
+        extra = sorted(set(dictionary["feature"]) - set(feature_ranking["feature"]))
+        raise ValueError(
+            f"Feature dictionary/ranking mismatch; missing={missing}, extra={extra}"
+        )
+
+    dictionary = dictionary.merge(
+        feature_ranking[ranking_columns],
+        on="feature",
+        how="left",
+        validate="one_to_one",
+    )
+    dictionary["source"] = np.where(
+        dictionary["feature"].isin(round1_features),
+        "Round 1",
+        "New in round 2",
+    )
+    return dictionary.sort_values("candidate_order").reset_index(drop=True)
+
+
 def _write_report(
     path: Path,
     selected: pd.Series,
@@ -358,6 +738,7 @@ def _write_report(
     structure: pd.DataFrame,
     selected_features: list[str],
     new_features: list[str],
+    feature_dictionary: pd.DataFrame,
     feature_selection_summary: dict[str, object],
     quantile_calibration: pd.DataFrame,
     interval_calibration: pd.DataFrame,
@@ -525,8 +906,49 @@ def _write_report(
     largest_round1_loss = fold_table.loc[
         fold_table["round2_minus_catboost_round1"].idxmax()
     ]
-    feature_lines = "\n".join(f"- `{feature}`" for feature in selected_features)
     new_feature_text = ", ".join(f"`{feature}`" for feature in new_features)
+    candidate_feature_rows = [
+        [
+            str(row.group),
+            f"`{row.feature}`",
+            str(row.definition),
+            str(row.source),
+            "Yes" if bool(row.selected) else "No",
+        ]
+        for row in feature_dictionary.itertuples(index=False)
+    ]
+    candidate_feature_table = _table(
+        ["Group", "Feature", "Definition", "Source", "Selected"],
+        candidate_feature_rows,
+    )
+    selected_feature_rows = []
+    selected_dictionary = feature_dictionary.loc[
+        feature_dictionary["selected"]
+    ].sort_values("selection_rank")
+    if selected_dictionary["feature"].tolist() != selected_features:
+        raise ValueError("Selected feature manifest and ranking order disagree")
+    for row in selected_dictionary.itertuples(index=False):
+        selected_feature_rows.append(
+            [
+                f"{int(row.selection_rank)}",
+                f"`{row.feature}`",
+                str(row.definition),
+                str(row.source),
+                f"{int(row.positive_folds)}/6",
+                f"{row.median_loss_function_change:.4f}",
+            ]
+        )
+    selected_feature_table = _table(
+        [
+            "Rank",
+            "Feature",
+            "Definition",
+            "Source",
+            "Positive folds",
+            "Median importance",
+        ],
+        selected_feature_rows,
+    )
 
     report = f"""# CatBoost round-2 validation report
 
@@ -575,29 +997,103 @@ period remains untouched.
 
 ## Feature selection
 
-The candidate matrix contained 70 leakage-safe features. A fixed fast model
-(depth 4, learning rate 0.08, L2=5, 125 trees) was fitted on the six odd
-months. CatBoost validation `LossFunctionChange` was aggregated by feature.
-A feature was retained when its median importance was positive and its
-importance was positive in at least four of six screening folds; the fixed
-cap of 55 was not reached. This mechanical rule selected
-{len(selected_features)} features.
+### Initial 70-feature candidate set
 
-On the six complementary even-month folds, the selected fast model improved
-the matching round-one fast model by
+The initial matrix combined the 45 round-one features with 25 additions. The
+additions expanded holiday handling, seasonal load distribution summaries,
+recent-level adjustments, annual anchors, temperature-distribution summaries,
+and horizon-decayed recent signals. This deliberately broad candidate set was
+used only as input to selection; it was not the final model specification.
+
+In the definitions below, the **origin** is midnight immediately before the
+forecast month and the **target** is an hour inside that month. “Recent”
+windows contain only timestamps strictly before the origin. “Prior-cycle”
+seasonal pools also use only pre-origin years and circular month/day distance,
+so observations from the target month or a later date can never enter a
+feature. Standard deviations are population standard deviations, and
+temperature summaries first average the supplied weather stations unless a
+station-level aggregation is explicitly stated. Empirical quantiles use
+linear interpolation. No realized target-month temperature is used.
+
+{candidate_feature_table}
+
+The machine-readable version of this table is saved as
+`candidate_feature_dictionary.csv`.
+
+### Six-month importance screening
+
+The screening folds were January, March, May, July, September, and November
+2010. Alternating months provide observations across the complete annual
+cycle while reserving a disjoint, seasonally complementary set of six months
+for verification. Using six rather than all twelve months approximately
+halved the expensive importance stage and still allowed the rule to require
+repeated evidence across several origins. Six is therefore a pragmatic
+compute/evidence trade-off, not a claim that six months are statistically
+optimal.
+
+For every screening origin, a fixed fast CatBoost model (depth 4, learning
+rate 0.08, L2=5, 125 trees) was fitted with all 70 candidates. The training
+set and feature construction followed the same rolling-origin restrictions as
+the final evaluation. CatBoost `LossFunctionChange` was then calculated on
+that month's validation observations. Positive values mean that removing or
+perturbing the feature increases validation loss for that fitted model; they
+are model-conditional importance estimates, not causal effects.
+
+Importance was aggregated by feature across the six months. The predeclared
+mechanical rule retained a feature when:
+
+1. its median `LossFunctionChange` was strictly positive; and
+2. it had positive importance in at least four of the six folds.
+
+Candidates passing both conditions were ranked by median importance and were
+subject to a maximum of 55 features. The cap was not reached: exactly
+{len(selected_features)} features passed. The four-of-six requirement favors
+features with reasonably repeatable value while allowing two months with a
+zero or negative estimate. It can miss effects that are useful only in a
+narrow season; that is an intentional limitation of this compact selection
+procedure. The complete screening and verification pipeline took
+{float(feature_selection_summary['elapsed_seconds']) / 60:.1f} minutes on the
+development machine.
+
+### Verification on the complementary six months
+
+After screening, the {len(selected_features)}-feature set was frozen. It was
+then evaluated on February, April, June, August, October, and December 2010
+using the same fixed fast CatBoost configuration. To isolate the value of the
+feature set, it was compared with the matching 45-feature round-one model at
+the same depth, learning rate, regularization, and tree count rather than with
+either round's fully tuned winner. The acceptance guard allowed no more than
+a 0.5% average degradation relative to this round-one reference.
+
+The selected set achieved pinball loss
+{float(feature_selection_summary['verification_pinball_loss']):.3f}, versus
+{float(feature_selection_summary['round1_reference_pinball_loss']):.3f} for
+the matched round-one model: a
 {100 * float(feature_selection_summary['relative_improvement_vs_round1']):.2f}%
-and won {int(feature_selection_summary['verification_folds_won'])} of 6 folds.
-Those folds later entered the full grid search, so this check is development
-evidence rather than an independent test.
+reduction, with wins in
+{int(feature_selection_summary['verification_folds_won'])} of 6 months. It
+therefore passed the guard and was carried into the 12-fold hyperparameter
+search. This complementary check reduces the risk of selecting features that
+only look useful in the six screening months. It is not an independent final
+validation result, because all twelve 2010 months were subsequently reused in
+the round-two grid search; the untouched 2011 period remains the test.
 
-The selected features are:
+### Final 17-feature set
 
-{feature_lines}
+“Median importance” and “positive folds” below refer only to the six screening
+months. Rank is descending median `LossFunctionChange`; it is not a claim that
+features act independently.
 
-Seven features were new relative to round one: {new_feature_text}. The set is
-dominated by historical seasonal profile location, spread, and support,
-augmented by annual load growth, calendar seasonality, and temperature
-climatology or recent variability.
+{selected_feature_table}
+
+Seven selected features were new relative to round one: {new_feature_text}.
+The final set is dominated by historical seasonal-profile level, spread, and
+support, augmented by annual load growth, two calendar variables, and both
+climatological and recent temperature information. `hour` and `month` are
+passed to CatBoost as categorical variables. The compact result also shows
+why importance screening was useful: 53 candidates, including several
+intuitively plausible recent-load and annual-lag signals, did not satisfy the
+same cross-month rule.
 
 ## Primary matched validation comparison
 
@@ -756,7 +1252,8 @@ and the selected feature manifest is
 [`selected_features.yaml`](../feature_selection/round2/selected_features.yaml).
 Supporting outputs in this directory are `model_comparison.csv`,
 `fold_comparison.csv`, `quarter_comparison.csv`, `paired_tests.csv`,
-`candidate_shortlist.csv`, and `structure_summary.csv`.
+`candidate_shortlist.csv`, `structure_summary.csv`,
+`candidate_feature_dictionary.csv`, and `selected_feature_summary.csv`.
 """
     path.write_text(report, encoding="utf-8")
 
@@ -947,6 +1444,11 @@ def run(
     new_features = [
         feature for feature in selected_features if feature not in round1_features
     ]
+    feature_ranking = pd.read_csv(feature_selection_dir / "feature_ranking.csv")
+    feature_dictionary = _build_feature_dictionary(
+        feature_ranking,
+        round1_features,
+    )
     with (feature_selection_dir / "summary.json").open(
         "r", encoding="utf-8"
     ) as stream:
@@ -964,6 +1466,14 @@ def run(
         "structure_summary.csv": structure,
         "quantile_calibration.csv": quantile_calibration,
         "interval_calibration.csv": interval_calibration,
+        "candidate_feature_dictionary.csv": feature_dictionary.drop(
+            columns=["candidate_order"]
+        ),
+        "selected_feature_summary.csv": feature_dictionary.loc[
+            feature_dictionary["selected"]
+        ]
+        .sort_values("selection_rank")
+        .drop(columns=["candidate_order"]),
     }
     for filename, frame in outputs.items():
         frame.to_csv(output_dir / filename, index=False, float_format="%.10g")
@@ -1004,6 +1514,7 @@ def run(
         structure,
         selected_features,
         new_features,
+        feature_dictionary,
         feature_selection_summary,
         quantile_calibration,
         interval_calibration,

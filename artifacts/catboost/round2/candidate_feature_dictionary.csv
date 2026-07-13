@@ -1,0 +1,71 @@
+group,feature,definition,median_loss_function_change,positive_folds,selection_reason,selected,selection_rank,source
+Target time,hour,"Target hour of day, 0–23.",0.003981585737,4,eligible,True,17,Round 1
+Target time,day_of_week,"Target weekday, with Monday=0 and Sunday=6.",0,0,non_positive_median,False,,Round 1
+Target time,hour_of_week,"`24 * day_of_week + hour`, giving values 0–167.",0,0,non_positive_median,False,,Round 1
+Target time,month,"Target calendar month, 1–12.",0.4276625165,4,eligible,True,3,Round 1
+Target time,is_weekend,"1 for a Saturday or Sunday target, otherwise 0.",-0.001471368508,1,non_positive_median,False,,Round 1
+Target time,hour_sin,`sin(2π * hour / 24)`.,0,1,non_positive_median,False,,Round 1
+Target time,hour_cos,`cos(2π * hour / 24)`.,0,0,non_positive_median,False,,Round 1
+Target time,seasonal_day_sin,Sine of the target month/day position in a fixed 366-day leap year.,0.08478817277,4,eligible,True,8,Round 1
+Target time,seasonal_day_cos,Cosine of the target month/day position in the same fixed leap year.,-0.01553428447,2,non_positive_median,False,,Round 1
+Horizon,horizon_hours,Integer hours from the monthly origin to the target; the first hour is 0.,-0.00967116815,3,non_positive_median,False,,Round 1
+Horizon,forecast_week,Zero-based seven-day horizon bucket: `floor(horizon_hours / 168)`.,-0.004293941654,2,non_positive_median,False,,Round 1
+Holiday,holiday_name,"US federal holiday name for the target day, including observed dates; `none` otherwise.",0,0,non_positive_median,False,,New in round 2
+Holiday,is_holiday,1 when the target day is a US federal holiday or its observed date.,0,0,non_positive_median,False,,New in round 2
+Holiday,is_working_day,1 for Monday–Friday targets that are not federal holidays.,0,0,non_positive_median,False,,New in round 2
+Holiday,is_day_before_holiday,1 when the following calendar day is a federal holiday.,0,0,non_positive_median,False,,New in round 2
+Holiday,is_day_after_holiday,1 when the preceding calendar day is a federal holiday.,0,2,non_positive_median,False,,New in round 2
+Holiday,is_year_end_holiday_period,1 from December 24–31 or January 1–2.,6.748440904e-06,3,insufficient_positive_folds,False,,New in round 2
+Recent load,load_mean_7d,Mean hourly load over the complete 7 days before the origin.,-0.01347793745,2,non_positive_median,False,,Round 1
+Recent load,load_mean_28d,Mean hourly load over the complete 28 days before the origin.,-0.021670228,2,non_positive_median,False,,Round 1
+Recent load,load_mean_90d,Mean hourly load over the complete 90 days before the origin.,-0.0226397305,2,non_positive_median,False,,New in round 2
+Recent load,load_mean_365d,Mean hourly load over the complete 365 days before the origin.,0.001836445871,3,insufficient_positive_folds,False,,Round 1
+Recent load,load_std_28d,Population standard deviation of hourly load over the complete 28 days before the origin.,0.0009454192796,3,insufficient_positive_folds,False,,Round 1
+Recent load,load_mean_7d_minus_28d,"`load_mean_7d - load_mean_28d`, measuring very-recent level change.",-0.01065906762,2,non_positive_median,False,,Round 1
+Recent load,load_mean_28d_minus_90d,"`load_mean_28d - load_mean_90d`, measuring medium-term level change.",-0.08951181527,2,non_positive_median,False,,New in round 2
+Recent load,load_daily_slope_28d,OLS slope in MW/day through the 28 pre-origin daily mean loads.,-0.005059402776,2,non_positive_median,False,,Round 1
+Recent load,load_yoy_ratio_28d,Recent 28-day mean divided by the corresponding 28-day mean one calendar year earlier.,-0.05396942447,2,non_positive_median,False,,Round 1
+Recent load,load_yoy_ratio_365d,Recent 365-day mean divided by the preceding calendar-aligned 365-day mean.,0.089486223,4,eligible,True,7,Round 1
+Recent profile,load_last_day_same_hour,Load at the target hour of day in the final complete day before the origin.,0.01683490274,3,insufficient_positive_folds,False,,Round 1
+Recent profile,load_last_same_hour_of_week,Most recent pre-origin load with the target weekday and hour.,0,2,non_positive_median,False,,Round 1
+Recent profile,load_how_mean_4w,Mean load for the target hour of week over the final 4 complete weeks.,-0.001837702805,2,non_positive_median,False,,Round 1
+Recent profile,load_how_mean_12w,Mean load for the target hour of week over the final 12 complete weeks.,0,0,non_positive_median,False,,Round 1
+Recent profile,load_how_std_12w,Population standard deviation for the target hour of week over the final 12 complete weeks.,0,1,non_positive_median,False,,Round 1
+Seasonal load,load_seasonal_daytype_8d_q10,10th percentile of prior-cycle loads matching target hour and weekday/weekend type within ±8 calendar days.,-0.007173068236,3,non_positive_median,False,,Round 1
+Seasonal load,load_seasonal_daytype_8d_q25,25th percentile of the same ±8-day day-type analogue pool.,0.02873952419,4,eligible,True,11,New in round 2
+Seasonal load,load_seasonal_daytype_8d_q50,Median of the same ±8-day day-type analogue pool.,0.04375468669,3,insufficient_positive_folds,False,,Round 1
+Seasonal load,load_seasonal_daytype_8d_q75,75th percentile of the same ±8-day day-type analogue pool.,0.09784270976,4,eligible,True,6,New in round 2
+Seasonal load,load_seasonal_daytype_8d_q90,90th percentile of the same ±8-day day-type analogue pool.,0.2171196067,4,eligible,True,4,Round 1
+Seasonal load,load_seasonal_daytype_8d_count,Number of observations in the ±8-day day-type analogue pool.,0.002293925944,3,insufficient_positive_folds,False,,Round 1
+Seasonal load,load_seasonal_how_15d_mean,Mean prior-cycle load matching exact target weekday and hour within ±15 calendar days.,0.5117077727,6,eligible,True,2,Round 1
+Seasonal load,load_seasonal_how_15d_std,Population standard deviation in the exact-weekday/hour ±15-day analogue pool.,0.01174384579,5,eligible,True,13,Round 1
+Seasonal load,load_seasonal_how_15d_count,Number of observations in the exact-weekday/hour ±15-day analogue pool.,0.1835946834,4,eligible,True,5,Round 1
+Seasonal load,load_seasonal_how_30d_mean,Mean prior-cycle load matching exact target weekday and hour within ±30 calendar days.,1.148312447,6,eligible,True,1,New in round 2
+Seasonal load,load_seasonal_how_30d_std,Population standard deviation in the exact-weekday/hour ±30-day analogue pool.,0.00847158666,4,eligible,True,15,New in round 2
+Level adjustment,load_seasonal_level_ratio_28d,Observed 28-day mean divided by the mean historical seasonal median estimated for those pre-origin hours.,-0.01299401437,1,non_positive_median,False,,Round 1
+Level adjustment,load_seasonal_daytype_8d_q50_scaled_28d,Target seasonal median multiplied by `load_seasonal_level_ratio_28d`.,0.025366794,4,eligible,True,12,Round 1
+Level adjustment,load_seasonal_level_delta_28d,Observed 28-day mean minus the mean historical seasonal median for those pre-origin hours.,-0.004401383414,1,non_positive_median,False,,New in round 2
+Level adjustment,load_seasonal_daytype_8d_q50_shifted_28d,Target seasonal median plus `load_seasonal_level_delta_28d`.,0,2,non_positive_median,False,,New in round 2
+Annual anchor,load_lag_calendar_1y,"Load at the target timestamp minus one calendar year; preserves month, day, and hour.",0,2,non_positive_median,False,,Round 1
+Annual anchor,load_lag_calendar_2y,Load at the target timestamp minus two calendar years.,0.002884900212,3,insufficient_positive_folds,False,,New in round 2
+Annual anchor,load_lag_364d,Load 364 days earlier; preserves weekday and hour because 364 days is 52 weeks.,-0.0010552527,2,non_positive_median,False,,Round 1
+Annual anchor,load_lag_728d,Load 728 days earlier; preserves weekday and hour across 104 weeks.,-0.001051027348,0,non_positive_median,False,,New in round 2
+Annual anchor,load_annual_anchor_mean,"Mean of the 1-year, 2-year, 364-day, and 728-day load anchors.",0.0003306150911,3,insufficient_positive_folds,False,,New in round 2
+Annual anchor,load_annual_anchor_std,Population standard deviation across the same four annual anchors.,9.521927193e-05,3,insufficient_positive_folds,False,,New in round 2
+Temperature climatology,temperature_clim_15d_mean,Mean temperature across stations and prior-cycle target-hour analogues within ±15 calendar days.,-0.001143480569,3,non_positive_median,False,,Round 1
+Temperature climatology,temperature_clim_15d_min_station,Minimum across station-specific mean temperatures in the ±15-day analogue pool.,-0.003557186068,3,non_positive_median,False,,Round 1
+Temperature climatology,temperature_clim_15d_max_station,Maximum across station-specific mean temperatures in the ±15-day analogue pool.,6.350840991e-05,3,insufficient_positive_folds,False,,Round 1
+Temperature climatology,temperature_clim_15d_station_std,Population standard deviation across station-specific analogue means; a spatial spread measure.,0,0,non_positive_median,False,,Round 1
+Temperature climatology,temperature_clim_15d_temporal_std,Population standard deviation across analogue-hour station means; a temporal uncertainty measure.,0.0111444859,3,insufficient_positive_folds,False,,Round 1
+Temperature climatology,temperature_clim_15d_q10,10th percentile of station-mean temperature across target-hour ±15-day analogues.,0.07428505069,4,eligible,True,9,New in round 2
+Temperature climatology,temperature_clim_15d_q90,90th percentile of station-mean temperature across target-hour ±15-day analogues.,0.006178166061,4,eligible,True,16,New in round 2
+Temperature climatology,temperature_clim_15d_hdd65,"`max(65 - climatological mean temperature, 0)` in the supplied temperature units.",0.00962723625,4,eligible,True,14,New in round 2
+Temperature climatology,temperature_clim_15d_cdd65,"`max(climatological mean temperature - 65, 0)` in the supplied temperature units.",-0.0007952729364,3,non_positive_median,False,,New in round 2
+Recent temperature,temperature_recent_mean_1d,Mean observed temperature across stations and hours in the complete day before the origin.,0.009335024512,3,insufficient_positive_folds,False,,Round 1
+Recent temperature,temperature_recent_mean_7d,Mean observed temperature across stations and hours in the complete 7 days before the origin.,-0.007306525889,2,non_positive_median,False,,Round 1
+Recent temperature,temperature_recent_mean_28d,Mean observed temperature across stations and hours in the complete 28 days before the origin.,0.002551251103,3,insufficient_positive_folds,False,,Round 1
+Recent temperature,temperature_recent_std_7d,Population standard deviation over 7 days of hourly temperature after averaging stations.,0.03269045223,4,eligible,True,10,Round 1
+Recent temperature,temperature_recent_anomaly_7d,Observed 7-day mean minus historical seasonal expectations for those same pre-origin hours.,-0.03423654753,2,non_positive_median,False,,Round 1
+Horizon decay,temperature_recent_anomaly_7d_decay_14d,`temperature_recent_anomaly_7d * exp(-horizon_hours / (24 * 14))`.,-0.03154466673,2,non_positive_median,False,,New in round 2
+Horizon decay,load_last_day_same_hour_decay_2d,`load_last_day_same_hour * exp(-horizon_hours / (24 * 2))`.,-0.01162062221,1,non_positive_median,False,,New in round 2
+Horizon decay,load_last_same_hour_of_week_decay_7d,`load_last_same_hour_of_week * exp(-horizon_hours / (24 * 7))`.,0.003443610999,3,insufficient_positive_folds,False,,New in round 2
