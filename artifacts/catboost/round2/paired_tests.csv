@@ -1,0 +1,4 @@
+model,reference_model,paired_months,hour_weighted_relative_improvement,mean_monthly_loss_difference,std_monthly_loss_difference,hac_lag,hac_mean_test_statistic,hac_mean_test_pvalue,hac_mean_difference_ci95_lower,hac_mean_difference_ci95_upper,folds_won,folds_lost,folds_tied,exact_sign_test_pvalue
+CatBoost round 2,CatBoost round 1,12,0.06818430746,-0.6126469541,0.7506758155,2,-3.046275554,0.01112123318,-1.05529465,-0.1699992584,9,3,0,0.1459960938
+CatBoost round 2,Seasonal empirical,12,0.1727583015,-1.777305313,2.346539602,2,-2.912661436,0.0141216381,-3.120345933,-0.4342646937,9,3,0,0.1459960938
+CatBoost round 2,Seasonal naive,12,0.4531318534,-6.995281585,4.649183036,2,-4.563262199,0.0008122901241,-10.36929568,-3.621267495,12,0,0,0.00048828125

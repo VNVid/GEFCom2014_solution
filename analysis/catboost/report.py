@@ -25,6 +25,7 @@ from scipy.stats import t as student_t
 
 
 CATBOOST_LABEL = "CatBoost round 1"
+ROUND2_LABEL = "CatBoost round 2"
 EMPIRICAL_LABEL = "Seasonal empirical"
 NAIVE_LABEL = "Seasonal naive"
 MODEL_LABELS = {
@@ -211,7 +212,7 @@ def _build_fold_table(
 
 
 def _build_paired_tests(
-    fold_table: pd.DataFrame, search_candidates: int, period: str
+    fold_table: pd.DataFrame, period: str
 ) -> tuple[pd.DataFrame, int]:
     count = len(fold_table)
     hac_lag = int(np.floor(4.0 * (count / 100.0) ** (2.0 / 9.0)))
@@ -230,7 +231,6 @@ def _build_paired_tests(
         mean, statistic, hac_pvalue, lower, upper = _hac_mean_loss_test(
             differences, hac_lag
         )
-        adjustment = search_candidates if model == "catboost_round1" else 1
         model_loss = float(np.average(fold_table[model], weights=weights))
         reference_loss = float(np.average(fold_table[reference], weights=weights))
         records.append(
@@ -254,11 +254,6 @@ def _build_paired_tests(
                 "folds_lost": losses,
                 "folds_tied": ties,
                 "exact_sign_test_pvalue": sign_pvalue,
-                "selection_bonferroni_factor": adjustment,
-                "selection_adjusted_hac_pvalue": min(1.0, adjustment * hac_pvalue),
-                "selection_adjusted_sign_pvalue": min(
-                    1.0, adjustment * sign_pvalue
-                ),
             }
         )
     return pd.DataFrame(records), hac_lag
@@ -416,7 +411,72 @@ def _plot_calibration_sharpness(comparison: pd.DataFrame, path: Path) -> None:
     plt.close(figure)
 
 
-def run(search_dir: Path, baseline_dir: Path, output_dir: Path) -> Path:
+def _plot_calibration_curves(
+    quantile_calibration: pd.DataFrame,
+    interval_calibration: pd.DataFrame,
+    model_order: list[str],
+    path: Path,
+) -> None:
+    """Plot marginal quantile and central-interval coverage by model."""
+
+    palette = {
+        ROUND2_LABEL: "#2563eb",
+        CATBOOST_LABEL: (
+            "#7c3aed" if ROUND2_LABEL in model_order else "#2563eb"
+        ),
+        EMPIRICAL_LABEL: "#d97706",
+        NAIVE_LABEL: "#6b7280",
+    }
+    colors = {model: palette[model] for model in model_order}
+    figure, axes = plt.subplots(1, 2, figsize=(12, 5))
+    sns.lineplot(
+        data=quantile_calibration,
+        x="quantile",
+        y="empirical_coverage",
+        hue="model",
+        hue_order=model_order,
+        palette=colors,
+        ax=axes[0],
+    )
+    axes[0].plot([0, 1], [0, 1], linestyle="--", color="black", linewidth=1)
+    axes[0].set(
+        title="Marginal quantile calibration",
+        xlabel="Nominal quantile",
+        ylabel="Empirical P(Y ≤ forecast)",
+        xlim=(0, 1),
+        ylim=(0, 1),
+    )
+    sns.lineplot(
+        data=interval_calibration,
+        x="nominal_coverage",
+        y="empirical_coverage",
+        hue="model",
+        hue_order=model_order,
+        palette=colors,
+        marker="o",
+        ax=axes[1],
+    )
+    axes[1].plot([0.45, 1], [0.45, 1], linestyle="--", color="black", linewidth=1)
+    axes[1].set(
+        title="Central interval coverage",
+        xlabel="Nominal coverage",
+        ylabel="Empirical coverage",
+        xlim=(0.45, 1),
+        ylim=(0, 1),
+    )
+    for axis in axes:
+        axis.legend(frameon=False)
+    figure.tight_layout()
+    figure.savefig(path, dpi=170)
+    plt.close(figure)
+
+
+def run(
+    search_dir: Path,
+    baseline_dir: Path,
+    selected_prediction_dir: Path,
+    output_dir: Path,
+) -> Path:
     """Build deterministic tables and figures from saved validation results."""
 
     candidate_summary = pd.read_csv(search_dir / "candidate_summary.csv")
@@ -428,6 +488,12 @@ def run(search_dir: Path, baseline_dir: Path, output_dir: Path) -> Path:
     baseline_intervals = pd.read_csv(baseline_dir / "interval_calibration.csv")
     baseline_predictions = pd.read_csv(
         baseline_dir / "predictions.csv.gz", parse_dates=["origin"]
+    )
+    selected_quantile_calibration = pd.read_csv(
+        selected_prediction_dir / "quantile_calibration.csv"
+    )
+    selected_interval_calibration = pd.read_csv(
+        selected_prediction_dir / "interval_calibration.csv"
     )
 
     if candidate_summary.empty:
@@ -459,16 +525,35 @@ def run(search_dir: Path, baseline_dir: Path, output_dir: Path) -> Path:
         baseline_calibration,
     )
     fold_table = _build_fold_table(selected_folds, baseline_folds)
-    full_tests, _ = _build_paired_tests(
-        fold_table, len(complete), "2009-2010 validation"
-    )
+    full_tests, _ = _build_paired_tests(fold_table, "2009-2010 validation")
     tests_2010, _ = _build_paired_tests(
         fold_table.loc[fold_table["origin"].dt.year.eq(2010)],
-        len(complete),
         "2010 only",
     )
     paired_tests = pd.concat([full_tests, tests_2010], ignore_index=True)
     period_comparison = _build_period_comparison(fold_table)
+    quantile_calibration = pd.concat(
+        [
+            selected_quantile_calibration.assign(model=CATBOOST_LABEL),
+            pd.read_csv(baseline_dir / "quantile_calibration.csv").assign(
+                model=lambda frame: frame["model"].map(MODEL_LABELS)
+            ),
+        ],
+        ignore_index=True,
+    )
+    interval_calibration = pd.concat(
+        [
+            selected_interval_calibration.assign(model=CATBOOST_LABEL),
+            pd.read_csv(baseline_dir / "interval_calibration.csv").assign(
+                model=lambda frame: frame["model"].map(MODEL_LABELS)
+            ),
+        ],
+        ignore_index=True,
+    )
+    if len(quantile_calibration) != 3 * len(levels):
+        raise ValueError("Round-one quantile calibration comparison is incomplete")
+    if len(interval_calibration) != 3 * 4:
+        raise ValueError("Round-one interval calibration comparison is incomplete")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     figures_dir = output_dir / "figures"
@@ -479,6 +564,8 @@ def run(search_dir: Path, baseline_dir: Path, output_dir: Path) -> Path:
         "period_comparison.csv": period_comparison,
         "selected_fold_comparison.csv": fold_table,
         "candidate_shortlist.csv": complete.head(8),
+        "quantile_calibration.csv": quantile_calibration,
+        "interval_calibration.csv": interval_calibration,
     }
     for filename, frame in outputs.items():
         frame.to_csv(output_dir / filename, index=False, float_format="%.10g")
@@ -494,6 +581,12 @@ def run(search_dir: Path, baseline_dir: Path, output_dir: Path) -> Path:
     )
     _plot_calibration_sharpness(
         comparison, figures_dir / "04_calibration_sharpness.png"
+    )
+    _plot_calibration_curves(
+        quantile_calibration,
+        interval_calibration,
+        [CATBOOST_LABEL, EMPIRICAL_LABEL, NAIVE_LABEL],
+        figures_dir / "05_calibration_curves.png",
     )
     return output_dir
 
@@ -511,12 +604,22 @@ def main() -> None:
         default=Path("artifacts/baseline/validation"),
     )
     parser.add_argument(
+        "--selected-prediction-dir",
+        type=Path,
+        default=Path("artifacts/catboost/predictions/round1"),
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=Path("artifacts/catboost/round1"),
     )
     args = parser.parse_args()
-    output_dir = run(args.search_dir, args.baseline_dir, args.output_dir)
+    output_dir = run(
+        args.search_dir,
+        args.baseline_dir,
+        args.selected_prediction_dir,
+        args.output_dir,
+    )
     print(f"Wrote comparison artifacts to {output_dir}")
 
 
