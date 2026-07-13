@@ -1,0 +1,25 @@
+source_model_data: artifacts/model_data/round2_validation
+selection_policy:
+  minimum_positive_folds: 4
+  maximum_features: 55
+features:
+- load_seasonal_how_30d_mean
+- load_seasonal_how_15d_mean
+- month
+- load_seasonal_daytype_8d_q90
+- load_seasonal_how_15d_count
+- load_seasonal_daytype_8d_q75
+- load_yoy_ratio_365d
+- seasonal_day_sin
+- temperature_clim_15d_q10
+- temperature_recent_std_7d
+- load_seasonal_daytype_8d_q25
+- load_seasonal_daytype_8d_q50_scaled_28d
+- load_seasonal_how_15d_std
+- temperature_clim_15d_hdd65
+- load_seasonal_how_30d_std
+- temperature_clim_15d_q90
+- hour
+categorical_features:
+- hour
+- month

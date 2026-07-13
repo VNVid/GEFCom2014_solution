@@ -1,0 +1,28 @@
+{
+  "accepted": true,
+  "candidate_features": 70,
+  "elapsed_seconds": 204.151629333,
+  "maximum_allowed_relative_degradation": 0.005,
+  "relative_improvement_vs_round1": 0.04076741618773028,
+  "round1_reference_pinball_loss": 8.922291792739227,
+  "screening_origins": [
+    "2010-01-01",
+    "2010-03-01",
+    "2010-05-01",
+    "2010-07-01",
+    "2010-09-01",
+    "2010-11-01"
+  ],
+  "selected_features": 17,
+  "verification_folds_lost": 2,
+  "verification_folds_won": 4,
+  "verification_origins": [
+    "2010-02-01",
+    "2010-04-01",
+    "2010-06-01",
+    "2010-08-01",
+    "2010-10-01",
+    "2010-12-01"
+  ],
+  "verification_pinball_loss": 8.558553009876256
+}

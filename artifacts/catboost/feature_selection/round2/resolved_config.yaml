@@ -1,0 +1,142 @@
+backtest:
+  data:
+    load_dir: data/GEFCom2014-L_V2/Load
+  backtest:
+    default_split: validation
+    splits:
+      validation:
+        start: '2009-01-01'
+        end: '2011-01-01'
+      round2_validation:
+        start: '2010-01-01'
+        end: '2011-01-01'
+      test:
+        start: '2011-01-01'
+        end: '2012-01-01'
+  evaluation:
+    quantiles:
+      start: 0.01
+      stop: 0.99
+      step: 0.01
+    central_intervals:
+    - 0.5
+    - 0.8
+    - 0.9
+    - 0.98
+feature_selection:
+  data:
+    model_data_dir: artifacts/model_data/round2_validation
+  experiment:
+    split: round2_validation
+    screening_months:
+    - 1
+    - 3
+    - 5
+    - 7
+    - 9
+    - 11
+    verification_months:
+    - 2
+    - 4
+    - 6
+    - 8
+    - 10
+    - 12
+    expected_candidate_features: 70
+  model:
+    iterations: 125
+    depth: 4
+    learning_rate: 0.08
+    l2_leaf_reg: 5.0
+    random_seed: 42
+    thread_count: -1
+  selection:
+    minimum_positive_folds: 4
+    maximum_features: 55
+  verification:
+    maximum_relative_degradation_vs_round1: 0.005
+  references:
+    round1_fold_results: artifacts/catboost/search/phase1/fold_results.csv
+    round1_candidate: depth4_lr0p08_l25_trees125
+    baseline_fold_metrics: artifacts/baseline/validation/fold_metrics.csv
+  outputs:
+    root_dir: artifacts/catboost/feature_selection/round2
+candidate_features:
+- hour
+- day_of_week
+- hour_of_week
+- month
+- is_weekend
+- hour_sin
+- hour_cos
+- seasonal_day_sin
+- seasonal_day_cos
+- horizon_hours
+- forecast_week
+- holiday_name
+- is_holiday
+- is_working_day
+- is_day_before_holiday
+- is_day_after_holiday
+- is_year_end_holiday_period
+- load_mean_7d
+- load_mean_28d
+- load_mean_90d
+- load_mean_365d
+- load_std_28d
+- load_mean_7d_minus_28d
+- load_mean_28d_minus_90d
+- load_daily_slope_28d
+- load_yoy_ratio_28d
+- load_yoy_ratio_365d
+- load_last_day_same_hour
+- load_last_same_hour_of_week
+- load_how_mean_4w
+- load_how_mean_12w
+- load_how_std_12w
+- load_seasonal_daytype_8d_q10
+- load_seasonal_daytype_8d_q25
+- load_seasonal_daytype_8d_q50
+- load_seasonal_daytype_8d_q75
+- load_seasonal_daytype_8d_q90
+- load_seasonal_daytype_8d_count
+- load_seasonal_how_15d_mean
+- load_seasonal_how_15d_std
+- load_seasonal_how_15d_count
+- load_seasonal_how_30d_mean
+- load_seasonal_how_30d_std
+- load_seasonal_level_ratio_28d
+- load_seasonal_daytype_8d_q50_scaled_28d
+- load_seasonal_level_delta_28d
+- load_seasonal_daytype_8d_q50_shifted_28d
+- load_lag_calendar_1y
+- load_lag_calendar_2y
+- load_lag_364d
+- load_lag_728d
+- load_annual_anchor_mean
+- load_annual_anchor_std
+- temperature_clim_15d_mean
+- temperature_clim_15d_min_station
+- temperature_clim_15d_max_station
+- temperature_clim_15d_station_std
+- temperature_clim_15d_temporal_std
+- temperature_clim_15d_q10
+- temperature_clim_15d_q90
+- temperature_clim_15d_hdd65
+- temperature_clim_15d_cdd65
+- temperature_recent_mean_1d
+- temperature_recent_mean_7d
+- temperature_recent_mean_28d
+- temperature_recent_std_7d
+- temperature_recent_anomaly_7d
+- temperature_recent_anomaly_7d_decay_14d
+- load_last_day_same_hour_decay_2d
+- load_last_same_hour_of_week_decay_7d
+categorical_features:
+- hour
+- day_of_week
+- hour_of_week
+- month
+- is_weekend
+- forecast_week
+- holiday_name

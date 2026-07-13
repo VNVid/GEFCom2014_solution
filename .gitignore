@@ -15,7 +15,7 @@ __pycache__/
 .cache/
 artifacts/model_data/
 artifacts/catboost/benchmark/
-artifacts/catboost/search/**/progress.log
+artifacts/catboost/**/progress.log
 
 # Other
 backup/

@@ -11,6 +11,7 @@ from .search import (
     effective_candidate_name,
     summarize_search_results,
 )
+from .selection import select_features_from_loss_change
 
 __all__ = [
     "build_multi_quantile_loss",
@@ -20,4 +21,5 @@ __all__ = [
     "fit_catboost_quantiles",
     "predict_catboost_quantiles",
     "summarize_search_results",
+    "select_features_from_loss_change",
 ]
