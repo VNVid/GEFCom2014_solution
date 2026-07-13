@@ -10,6 +10,51 @@ The GEFCom2014 load track ([Hong et al., 2016](https://doi.org/10.1016/j.ijforec
 
 The main patterns are strong hourly, weekly, and seasonal demand cycles, high dependence on recent load values, and a nonlinear U-shaped relationship between load and temperature. A more detailed analysis of data quality, seasonality, weather effects, serial dependence, and extreme observations is available in the [EDA report](artifacts/eda/report.md).
 
+## Reproducing the results
+
+Use Python 3.9 and run all commands from the repository root. Download the
+[GEFCom2014 dataset from Kaggle](https://www.kaggle.com/datasets/cthngon/gefcom2014-dataset),
+then copy its `GEFCom2014-L_V2` directory to `data/`. The expected load path is
+`data/GEFCom2014-L_V2/Load/`, containing `Task 1` through `Task 15` and
+`Solution to Task 15`.
+
+```bash
+python3.9 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -e . --no-deps
+.venv/bin/python -m pytest
+
+# EDA and validation baselines
+.venv/bin/python -m analysis.eda.run
+.venv/bin/python -m analysis.baseline.run --split validation
+
+# Round 1
+.venv/bin/python -m analysis.model_data.run --feature-config configs/features/first_round.yaml --split validation
+.venv/bin/python -m analysis.catboost.search --config configs/catboost.yaml
+.venv/bin/python -m analysis.catboost.predict_selected --experiment round1
+.venv/bin/python -m analysis.catboost.report
+
+# Round 2
+.venv/bin/python -m analysis.model_data.run --feature-config configs/features/round2_candidates.yaml --split round2_validation
+.venv/bin/python -m analysis.catboost.feature_selection
+.venv/bin/python -m analysis.catboost.search --config configs/catboost_round2_phase1.yaml
+.venv/bin/python -m analysis.catboost.predict_selected --experiment round2
+.venv/bin/python -m analysis.catboost.round2_report
+
+# Locked test
+.venv/bin/python -m analysis.model_data.run --feature-config configs/features/round2_candidates.yaml --split test
+.venv/bin/python -m analysis.baseline.run --split test
+.venv/bin/python -m analysis.catboost.predict_selected --experiment round1_test --experiment round2_test
+.venv/bin/python -m analysis.catboost.test_report
+```
+
+Generated outputs are written under `artifacts/`; the main reports are linked
+throughout this README. The CatBoost searches, feature selection, and prediction
+runners are resumable and validate existing checkpoints before reusing them.
+Move or remove a matching configured output directory to force a clean refit.
+The full CPU workflow takes several hours, dominated by the round-one grid
+search.
+
 ## Evaluation Strategy
 
 The models are evaluated with expanding-window rolling-origin backtesting, which plays the same role as k-fold cross-validation while preserving the chronological order of the data. At each monthly forecast origin, the model is trained on all observations available before that month and predicts the complete following month. The actual values are revealed only after prediction, then added to the training history for the next fold. Preprocessing and feature construction are repeated using only pre-origin data, preventing information from the forecast period or later from leaking into the model.
@@ -51,7 +96,7 @@ $$\mathcal{T}_m = \{t : o_m \leq t < o_{m+1}\}.$$
 
 For every $t \in \mathcal{T}_m$, the feature vector is constructed as
 
-$$X(o_m,t) = \left[c(t),\ h(o_m,t),\ \phi_Y\!\left(\{Y_s:s < o_m\},t\right),\ \phi_T\!\left(\{T_s:s < o_m\},t\right)\right].$$
+$$X(o_m,t) = \left[c(t),\ h(o_m,t),\ \phi_Y\left(\{Y_s:s < o_m\},t\right),\ \phi_T\left(\{T_s:s < o_m\},t\right)\right].$$
 
 Here, $c(t)$ contains deterministic target-time information such as hour,
 weekday, and season; $h(o_m,t)=t-o_m$ is the forecast horizon; and
@@ -76,7 +121,7 @@ The learned models jointly estimate the 99 conditional quantiles
 $\mathcal{Q}=\{0.01,\ldots,0.99\}$:
 
 $$
-\widehat q_{t,\tau} = f_\tau\!\left(X(o_m,t);\widehat\theta_{o_m}\right), \qquad \tau\in\mathcal{Q}.
+\widehat q_{t,\tau} = f_\tau\left(X(o_m,t);\widehat\theta_{o_m}\right), \qquad \tau\in\mathcal{Q}.
 $$
 
 For an evaluated origin $o_m$, all eligible historical examples are assembled
@@ -105,7 +150,7 @@ For $N$ training examples $(x_i,y_i)$ and quantile levels
 $\mathcal{Q}=\{0.01,\ldots,0.99\}$, the optimized objective is the mean pinball
 loss across observations and quantiles:
 
-$$\widehat\theta = \underset{\theta}{\operatorname{arg\,min}}\ \frac{1}{N|\mathcal{Q}|}\sum_{i=1}^{N}\sum_{\tau\in\mathcal{Q}}\rho_\tau\!\left(y_i-f_\tau(x_i;\theta)\right), \qquad \rho_\tau(u)=u\left(\tau-\mathbf{1}\{u < 0\}\right).$$
+$$\widehat\theta = \underset{\theta}{\operatorname{arg\,min}}\ \frac{1}{N|\mathcal{Q}|}\sum_{i=1}^{N}\sum_{\tau\in\mathcal{Q}}\rho_\tau\left(y_i-f_\tau(x_i;\theta)\right), \qquad \rho_\tau(u)=u\left(\tau-\mathbf{1}\{u < 0\}\right).$$
 
 This directly aligns model fitting with the task metric and produces all
 99 quantiles from one model. The forecast is also **direct**, rather than
