@@ -1,0 +1,2 @@
+model,forecast_hours,folds,pinball_loss,fold_pinball_mean,fold_pinball_std,fold_pinball_median,fold_pinball_min,fold_pinball_max,median_mae,median_bias,mean_absolute_calibration_error,max_absolute_calibration_error,quantile_crossings
+catboost_round1,8760,12,8.522126127,8.523865933,4.101642743,7.566740939,4.17282998,18.61992061,23.4124023,-10.611149,0.1266394539,0.206803653,676

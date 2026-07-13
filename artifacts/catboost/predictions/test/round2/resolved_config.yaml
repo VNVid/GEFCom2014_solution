@@ -1,0 +1,40 @@
+experiment_name: round2_test
+experiment:
+  model_name: catboost_round2
+  split: test
+  model_data_dir: artifacts/model_data/test
+  selected_features_path: artifacts/catboost/feature_selection/round2/selected_features.yaml
+  search_summary_path: artifacts/catboost/search/round2_phase1/candidate_summary.csv
+  candidate: depth3_lr0p08_l25_trees125
+  output_dir: artifacts/catboost/predictions/test/round2
+backtest_split:
+  start: '2011-01-01'
+  end: '2012-01-01'
+features:
+- load_seasonal_how_30d_mean
+- load_seasonal_how_15d_mean
+- month
+- load_seasonal_daytype_8d_q90
+- load_seasonal_how_15d_count
+- load_seasonal_daytype_8d_q75
+- load_yoy_ratio_365d
+- seasonal_day_sin
+- temperature_clim_15d_q10
+- temperature_recent_std_7d
+- load_seasonal_daytype_8d_q25
+- load_seasonal_daytype_8d_q50_scaled_28d
+- load_seasonal_how_15d_std
+- temperature_clim_15d_hdd65
+- load_seasonal_how_30d_std
+- temperature_clim_15d_q90
+- hour
+categorical_features:
+- hour
+- month
+model_parameters:
+  random_seed: 42
+  thread_count: -1
+  depth: 3
+  learning_rate: 0.08
+  l2_leaf_reg: 5.0
+  iterations: 125

@@ -1,0 +1,5 @@
+model,pinball_loss_validation,pinball_loss_test
+CatBoost round 2,8.372673059,8.516531882
+CatBoost round 1,8.985331677,8.522126127
+Seasonal empirical,10.12119321,7.612906165
+Seasonal naive,15.3102226,15.55541667
