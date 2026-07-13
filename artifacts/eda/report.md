@@ -46,7 +46,7 @@ The following coverage and data-quality checks include missing values, duplicate
 | Operating days not containing 24 rows | 0 |
 | Forecast rounds / target hours | 15 / 10,968 |
 
-![Weather and load coverage](artifacts/eda/figures/01_data_coverage.png)
+![Weather and load coverage](figures/01_data_coverage.png)
 
 **Code and data.** Raw releases are read by [`load_complete_history()`](src/gefcom2014/data.py#L265), timestamp and calendar fields are added by `prepare_history()`, and integrity/missingness checks are calculated by `analyze_load()` in [`analysis.py`](analysis/eda/analysis.py). Minimal forecast-window metadata is produced by `describe_forecast_periods()` in the same file and written to [`round_manifest.csv`](artifacts/eda/tables/round_manifest.csv). [`plot_data_coverage()`](analysis/eda/load_plots.py#L18) generates [`01_data_coverage.png`](artifacts/eda/figures/01_data_coverage.png).
 
@@ -58,7 +58,7 @@ For transparent extreme-value diagnostics, observations at or below the empirica
 
 Most flagged values occur across several consecutive hours rather than as isolated spikes, making real system events more plausible than single corrupted readings. They are therefore retained in the training data. Removing extreme loads would make the predicted distribution too narrow and damage the 1st/99th quantiles.
 
-![Load history and distribution](artifacts/eda/figures/02_load_overview.png)
+![Load history and distribution](figures/02_load_overview.png)
 
 The top absolute one-hour change is +52.2; large changes otherwise concentrate around morning/evening ramps and the event-like periods.
 
@@ -73,11 +73,11 @@ Calendar effects are strong and interactive:
 - Monthly means show two high-demand seasons: July/August are about 184.1, while January reaches 164.0. Lower-demand periods occur in spring and autumn: April is the global trough at 108.5, and October is a secondary trough at 119.8.
 - The hour-of-day shape changes by season. Summer has a broad afternoon peak, whereas winter shows pronounced morning and evening demand.
 
-![Calendar seasonality](artifacts/eda/figures/03_calendar_seasonality.png)
+![Calendar seasonality](figures/03_calendar_seasonality.png)
 
 The seasonal shape recurs each year, but its amplitude and level shift materially. This argues against a random split and explains why one held-out month cannot represent general performance.
 
-![Year and month drift](artifacts/eda/figures/09_year_month_drift.png)
+![Year and month drift](figures/09_year_month_drift.png)
 
 **Code and data.** Calendar fields are created by [`prepare_history()`](analysis/eda/analysis.py#L94). [`plot_calendar_seasonality()`](analysis/eda/load_plots.py#L102) calculates the hour/day/month aggregations and generates [`03_calendar_seasonality.png`](artifacts/eda/figures/03_calendar_seasonality.png); [`plot_year_month_drift()`](analysis/eda/load_plots.py#L149) calculates the year/month aggregates and generates [`09_year_month_drift.png`](artifacts/eda/figures/09_year_month_drift.png).
 
@@ -91,11 +91,11 @@ Several integer plateaus merit awareness: the longest constant runs are 49 hours
 
 The “Temperature–load direction reverses by regime” panel separates the coldest and hottest quarters of observed temperatures. In cold conditions, each station has a negative correlation with load: warmer hours tend to coincide with lower demand. In hot conditions, the correlations are positive: warmer hours tend to coincide with higher demand. These opposite relationships partly cancel each other, leaving the overall correlation between mean temperature and load at only about 0.10. Although this unconditional correlation is weak, the relationship between load and individual station temperatures within the cold and hot regimes is substantial. A model may therefore benefit from station-level temperature features combined with nonlinear hot/cold effects, although their incremental value beyond aggregate temperature should be verified out of sample.
 
-![Weather station diagnostics](artifacts/eda/figures/04_temperature_diagnostics.png)
+![Weather station diagnostics](figures/04_temperature_diagnostics.png)
 
 Contemporaneous observed temperature has a clear U-shaped association with load. The lowest binned mean load is 103.41 in the 58.7–62.2 mean-temperature bin. At the cold and hot ends, binned load rises toward 250–290, although the most extreme bins contain far fewer observations. Hour-of-day shifts both the level and the response curve.
 
-![Temperature and load response](artifacts/eda/figures/05_temperature_load_response.png)
+![Temperature and load response](figures/05_temperature_load_response.png)
 
 This figure is descriptive, not a forecast-time availability claim. Actual temperature from a target month appears only in a later release. A same-hour previous-year temperature series—available at the origin but only a crude weather proxy—has an average fold MAE of 8.08 source units against target weather. Fold MAE ranges from 3.88 in August 2011 to 15.16 in December 2011, so substituting past actual weather for future weather is not innocuous.
 
