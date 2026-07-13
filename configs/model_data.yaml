@@ -1,0 +1,10 @@
+dataset:
+  # January 2007 is the first monthly origin with complete support for every
+  # feature in configs/features/first_round.yaml.
+  first_origin: "2007-01-01"
+  require_complete_features: true
+
+outputs:
+  # This is a reproducible local cache and is intentionally gitignored.
+  root_dir: artifacts/model_data
+  float_format: "%.12g"

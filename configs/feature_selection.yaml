@@ -1,0 +1,31 @@
+data:
+  model_data_dir: artifacts/model_data/round2_validation
+
+experiment:
+  split: round2_validation
+  screening_months: [1, 3, 5, 7, 9, 11]
+  verification_months: [2, 4, 6, 8, 10, 12]
+  expected_candidate_features: 70
+
+model:
+  iterations: 125
+  depth: 4
+  learning_rate: 0.08
+  l2_leaf_reg: 5.0
+  random_seed: 42
+  thread_count: -1
+
+selection:
+  minimum_positive_folds: 4
+  maximum_features: 55
+
+verification:
+  maximum_relative_degradation_vs_round1: 0.005
+
+references:
+  round1_fold_results: artifacts/catboost/search/phase1/fold_results.csv
+  round1_candidate: depth4_lr0p08_l25_trees125
+  baseline_fold_metrics: artifacts/baseline/validation/fold_metrics.csv
+
+outputs:
+  root_dir: artifacts/catboost/feature_selection/round2

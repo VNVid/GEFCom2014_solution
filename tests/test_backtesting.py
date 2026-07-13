@@ -6,7 +6,9 @@ from gefcom2014.backtesting import (
     data_for_fold,
     monthly_folds,
     prepare_backtest_frame,
+    prepare_weather_frame,
 )
+from gefcom2014.data import WEATHER_COLUMNS
 
 
 def test_monthly_folds_are_consecutive_and_half_open() -> None:
@@ -57,3 +59,23 @@ def test_backtest_frame_preserves_columns_for_future_models() -> None:
 
     assert frame.loc[0, "w1"] == 42.0
     assert frame.loc[0, "period_start"] == pd.Timestamp("2009-01-01 00:00")
+
+
+def test_weather_frame_preserves_early_weather_only_history() -> None:
+    weather: dict[str, object] = {
+        "zone_id": [1],
+        "timestamp": [pd.Timestamp("2001-01-01 01:00")],
+        "load": [float("nan")],
+    }
+    weather.update(
+        {
+            column: [float(index)]
+            for index, column in enumerate(WEATHER_COLUMNS)
+        }
+    )
+
+    frame = prepare_weather_frame(pd.DataFrame(weather))
+
+    assert frame.loc[0, "period_start"] == pd.Timestamp("2001-01-01 00:00")
+    assert pd.isna(frame.loc[0, "load"])
+    assert frame.loc[0, "w25"] == 24.0

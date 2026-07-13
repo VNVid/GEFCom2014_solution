@@ -1,0 +1,7 @@
+period,model,reference_model,paired_months,hour_weighted_relative_improvement,mean_monthly_loss_difference,std_monthly_loss_difference,hac_lag,hac_mean_test_statistic,hac_mean_test_pvalue,hac_mean_difference_ci95_lower,hac_mean_difference_ci95_upper,folds_won,folds_lost,folds_tied,exact_sign_test_pvalue
+2009-2010 validation,CatBoost round 1,Seasonal empirical,24,0.0639251212,-0.5800699648,1.776058453,2,-1.681277305,0.1062402782,-1.293792885,0.1336529552,13,11,0,0.8388197422
+2009-2010 validation,CatBoost round 1,Seasonal naive,24,0.4317582716,-6.41130189,3.57028784,2,-7.603694593,1.014018651e-07,-8.155557697,-4.667046083,24,0,0,1.192092896e-07
+2009-2010 validation,Seasonal empirical,Seasonal naive,24,0.3929526993,-5.831231925,3.2103628,2,-7.54855689,1.144867454e-07,-7.429262181,-4.233201669,24,0,0,1.192092896e-07
+2010 only,CatBoost round 1,Seasonal empirical,12,0.1122260495,-1.164658359,1.999903718,2,-2.43889964,0.0328868099,-2.215704381,-0.1136123371,9,3,0,0.1459960938
+2010 only,CatBoost round 1,Seasonal naive,12,0.4131155432,-6.382634631,4.225495759,2,-4.655140211,0.0006992154349,-9.400392093,-3.36487717,12,0,0,0.00048828125
+2010 only,Seasonal empirical,Seasonal naive,12,0.3389257969,-5.217976272,3.074119254,2,-4.925532468,0.0004528652918,-7.549640598,-2.886311946,12,0,0,0.00048828125

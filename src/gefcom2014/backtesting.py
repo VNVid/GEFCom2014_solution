@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
-from .data import interval_start
+from .data import WEATHER_COLUMNS, interval_start
 
 
 @dataclass(frozen=True)
@@ -17,7 +18,9 @@ class MonthlyFold:
     end: pd.Timestamp
 
 
-def monthly_folds(start: str | pd.Timestamp, end: str | pd.Timestamp) -> list[MonthlyFold]:
+def monthly_folds(
+    start: str | pd.Timestamp, end: str | pd.Timestamp
+) -> list[MonthlyFold]:
     """Create consecutive half-open calendar-month folds in ``[start, end)``."""
 
     first = pd.Timestamp(start)
@@ -48,12 +51,33 @@ def prepare_backtest_frame(actuals: pd.DataFrame) -> pd.DataFrame:
         raise ValueError(f"Backtest actuals are missing columns {missing}")
 
     frame = actuals.copy()
-    if frame["load"].isna().any():
-        raise ValueError("Backtest actuals must not contain missing loads")
+    if frame["load"].isna().any() or not np.isfinite(
+        frame["load"].to_numpy(dtype=float)
+    ).all():
+        raise ValueError("Backtest actuals must contain only finite loads")
     frame["period_start"] = interval_start(frame["timestamp"])
     frame = frame.sort_values(["period_start", "zone_id"], ignore_index=True)
     if frame.duplicated(["zone_id", "period_start"]).any():
         raise ValueError("Backtest actuals contain duplicate zone/hour rows")
+    return frame
+
+
+def prepare_weather_frame(weather: pd.DataFrame) -> pd.DataFrame:
+    """Add operating time to a complete station-temperature history."""
+
+    required = {"zone_id", "timestamp", *WEATHER_COLUMNS}
+    missing = sorted(required - set(weather.columns))
+    if missing:
+        raise ValueError(f"Weather history is missing columns {missing}")
+    temperatures = weather[list(WEATHER_COLUMNS)].to_numpy(dtype=float)
+    if not np.isfinite(temperatures).all():
+        raise ValueError("Weather history must contain only finite temperatures")
+
+    frame = weather.copy()
+    frame["period_start"] = interval_start(frame["timestamp"])
+    frame = frame.sort_values(["period_start", "zone_id"], ignore_index=True)
+    if frame.duplicated(["zone_id", "period_start"]).any():
+        raise ValueError("Weather history contains duplicate zone/hour rows")
     return frame
 
 

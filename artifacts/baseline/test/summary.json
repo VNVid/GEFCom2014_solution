@@ -1,0 +1,55 @@
+{
+  "aggregate_metrics": [
+    {
+      "fold_pinball_max": 13.0145562945,
+      "fold_pinball_mean": 7.6070332224,
+      "fold_pinball_median": 7.5940012843,
+      "fold_pinball_min": 3.8586372909,
+      "fold_pinball_std": 2.5501613025,
+      "folds": 12,
+      "forecast_hours": 8760,
+      "max_absolute_calibration_error": 0.0447260274,
+      "mean_absolute_calibration_error": 0.0287567455,
+      "median_bias": 4.6189212329,
+      "median_mae": 21.1072659817,
+      "model": "seasonal_empirical",
+      "pinball_loss": 7.6129061646,
+      "quantile_crossings": 0
+    },
+    {
+      "fold_pinball_max": 34.0684811828,
+      "fold_pinball_mean": 15.5810059044,
+      "fold_pinball_median": 13.6206306004,
+      "fold_pinball_min": 6.4237231183,
+      "fold_pinball_std": 7.391188483,
+      "folds": 12,
+      "forecast_hours": 8760,
+      "max_absolute_calibration_error": 0.6057534247,
+      "mean_absolute_calibration_error": 0.2610336239,
+      "median_bias": -13.4442351598,
+      "median_mae": 31.1108333333,
+      "model": "seasonal_naive",
+      "pinball_loss": 15.5554166667,
+      "quantile_crossings": 0
+    }
+  ],
+  "folds": 12,
+  "forecast_end": "2012-01-01 00:00:00",
+  "forecast_start": "2011-01-01 00:00:00",
+  "paired_comparison": [
+    {
+      "folds_lost": 0,
+      "folds_tied": 0,
+      "folds_won": 12,
+      "mean_pinball_difference": -7.973972682,
+      "median_pinball_difference": -5.4894896969,
+      "model": "seasonal_empirical",
+      "paired_folds": 12,
+      "paired_sign_test_pvalue": 0.0004882812,
+      "reference_model": "seasonal_naive",
+      "relative_pinball_improvement": 0.5105945197,
+      "std_pinball_difference": 6.2857811752
+    }
+  ],
+  "split": "test"
+}

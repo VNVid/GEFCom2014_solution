@@ -1,0 +1,3 @@
+model,forecast_hours,folds,pinball_loss,fold_pinball_mean,fold_pinball_std,fold_pinball_median,fold_pinball_min,fold_pinball_max,median_mae,median_bias,mean_absolute_calibration_error,max_absolute_calibration_error,quantile_crossings
+seasonal_empirical,8760,12,7.612906165,7.607033222,2.550161302,7.594001284,3.858637291,13.01455629,21.10726598,4.618921233,0.02875674554,0.0447260274,0
+seasonal_naive,8760,12,15.55541667,15.5810059,7.391188483,13.6206306,6.423723118,34.06848118,31.11083333,-13.44423516,0.2610336239,0.6057534247,0

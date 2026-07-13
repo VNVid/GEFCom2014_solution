@@ -1,0 +1,4 @@
+model,pinball_loss,relative_improvement_vs_empirical,monthly_pinball_mean,monthly_pinball_std,median_mae,median_bias_actual_minus_forecast,within_month_calibration_mae,coverage_90,mean_width_90,invalid_90_intervals,adjacent_quantile_crossings,adjacent_crossing_rate
+CatBoost round 1,8.382475265,0.0639251212,8.378708238,3.931169259,23.16799961,6.034501433,0.145674277,0.7673515982,70.02524728,0,2155,0.001255125338
+Seasonal empirical,8.954919585,0,8.958778202,4.894796417,24.98844463,15.40695491,0.1599625479,0.8191780822,74.28772489,0,0,0
+Seasonal naive,14.75160103,-0.6473180903,14.79001013,6.473551212,29.50320205,7.04027968,0.2774291084,0.00154109589,0,0,0,0
